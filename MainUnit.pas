@@ -62,13 +62,20 @@ type
     Label6: TLabel;
     Label7: TLabel;
     eSizeCmp: TEdit;
+    bAddAddress: TSpeedButton;
+    bDelAddress: TSpeedButton;
+    eAddress: TEdit;
     procedure bOpenROMClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure lbListClick(Sender: TObject);
+    procedure ValueChange(Sender: TObject);
+    procedure bAddAddressClick(Sender: TObject);
   private
     ROM: array of byte;
+    NoChange: boolean;
 
     procedure LoadROM(const FileName:string);
+    procedure UpdatePreview;
   public
   end;
 
@@ -82,8 +89,13 @@ uses uCompress, uTiles;
 
 const
   cPal16: tPal4bpp = (
-    $A0A0A0, $111111, $222222, $333333, $444444, $555555, $666666, $777777,
+    $E0E0E0, $111111, $222222, $333333, $444444, $555555, $666666, $777777,
     $888888, $999999, $AAAAAA, $BBBBBB, $CCCCCC, $DDDDDD, $EEEEEE, $FFFFFF);
+
+var
+  Spr: pVisual;
+  Buf: tLZStream;
+  MobTiles: array[0..1000, 0..7, 0..7] of byte;
 
 
 procedure TfmMain.LoadROM(const FileName:string);
@@ -111,20 +123,26 @@ begin
   lbList.AddItem(cGoblin.Name, @cGoblin);
   lbList.AddItem(cCrab.Name, @cCrab);
 
-  LoadROM('S:\2564 - Final Fantasy V Advance (U)(Independent).gba');
+  LoadROM('D:\Emulators\GBA\ROM\2564 - Final Fantasy V Advance (U)(Independent).gba');
+end;
+
+
+procedure TfmMain.UpdatePreview;
+begin
+  fmMain.Repaint;
+  ConvertTileGBA(@buf[Spr.Off], @MobTiles, Spr.W * Spr.H);
+  DrawMobSpriteGBA(fmMain.Handle, 170, 60, Spr.W, Spr.H, 2, false, @MobTiles, @cPal16)
 end;
 
 
 procedure TfmMain.lbListClick(Sender: TObject);
-  var Spr: pVisual;
-      Buf: tLZStream;
-      MobTiles: array[0..1000, 0..7, 0..7] of byte;
 begin
   if lbList.ItemIndex < 0 then exit;
   Spr := pointer(lbList.Items.Objects[lbList.ItemIndex]);
   Spr.SizeRaw := pCardinal( @ROM[Spr.Address] )^ shr 8;
   Spr.SizeCmp := DecodeLZ77InMem( @ROM[Spr.Address], Buf);
 
+  NoChange := true;
   seWidth.Value  := Spr.W;
   seHeight.Value := Spr.H;
   seOffset.Value := Spr.Off;
@@ -132,10 +150,37 @@ begin
   eName.Text     := Spr.Name;
   eSizeRaw.Text  := format(cFmt, [Spr.SizeRaw, Spr.SizeRaw]);
   eSizeCmp.Text  := format(cFmt, [Spr.SizeCmp, Spr.SizeCmp]);
+  NoChange := false;
 
-  ConvertTileGBA(@buf[Spr.Off], @MobTiles, Spr.W * Spr.H);
-  DrawMobSpriteGBA(fmMain.Handle, 170, 60, Spr.W, Spr.H, 2, false, @MobTiles, @cPal16)
+  UpdatePreview
+end;
 
+
+procedure TfmMain.ValueChange(Sender: TObject);
+begin
+  if NoChange then exit;
+
+  Spr.W    := seWidth.Value;
+  Spr.H    := seHeight.Value;
+  Spr.Off  := seOffset.Value;
+  Spr.BPP  := seBPP.Value;
+  Spr.Name := eName.Text;
+  lbList.Items[lbList.ItemIndex] := Spr.Name;
+
+  UpdatePreview;
+end;
+
+procedure TfmMain.bAddAddressClick(Sender: TObject);
+  var v: pVisual;
+begin
+  New(v);
+  v.Address := StrToInt(eAddress.Text);
+  v.Name := eAddress.Text;
+  v.BPP  := 4;
+  v.H    := 1;
+  v.W    := 1;
+  v.Off  := 8;
+  lbList.AddItem(v.Name, tObject(v));
 end;
 
 end.

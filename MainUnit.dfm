@@ -1,6 +1,6 @@
 object fmMain: TfmMain
-  Left = 332
-  Top = 138
+  Left = 336
+  Top = 124
   Width = 829
   Height = 527
   Caption = 'fmMain'
@@ -14,7 +14,7 @@ object fmMain: TfmMain
   OnCreate = FormCreate
   DesignSize = (
     813
-    488)
+    489)
   PixelsPerInch = 96
   TextHeight = 13
   object bOpenROM: TSpeedButton
@@ -367,6 +367,21 @@ object fmMain: TfmMain
     Height = 13
     Caption = 'Compressed size:'
   end
+  object bAddAddress: TSpeedButton
+    Left = 176
+    Top = 376
+    Width = 23
+    Height = 22
+    Caption = '+'
+    OnClick = bAddAddressClick
+  end
+  object bDelAddress: TSpeedButton
+    Left = 216
+    Top = 376
+    Width = 23
+    Height = 22
+    Caption = '-'
+  end
   object lbList: TListBox
     Left = 4
     Top = 60
@@ -386,6 +401,7 @@ object fmMain: TfmMain
     MinValue = 0
     TabOrder = 1
     Value = 0
+    OnChange = ValueChange
   end
   object seHeight: TSpinEdit
     Left = 208
@@ -396,6 +412,7 @@ object fmMain: TfmMain
     MinValue = 0
     TabOrder = 2
     Value = 0
+    OnChange = ValueChange
   end
   object seOffset: TSpinEdit
     Left = 256
@@ -406,6 +423,7 @@ object fmMain: TfmMain
     MinValue = 0
     TabOrder = 3
     Value = 0
+    OnChange = ValueChange
   end
   object seBPP: TSpinEdit
     Left = 304
@@ -416,6 +434,7 @@ object fmMain: TfmMain
     MinValue = 1
     TabOrder = 4
     Value = 1
+    OnChange = ValueChange
   end
   object eName: TEdit
     Left = 352
@@ -424,6 +443,7 @@ object fmMain: TfmMain
     Height = 21
     MaxLength = 20
     TabOrder = 5
+    OnChange = ValueChange
   end
   object eSizeRaw: TEdit
     Left = 504
@@ -440,6 +460,14 @@ object fmMain: TfmMain
     Height = 21
     ReadOnly = True
     TabOrder = 7
+  end
+  object eAddress: TEdit
+    Left = 168
+    Top = 352
+    Width = 121
+    Height = 21
+    TabOrder = 8
+    Text = '$1C7D04'
   end
   object OpenDialog: TOpenDialog
     Filter = 'SNES/GBA ROM|*.smc; *.gba|SNES ROM|*.smc|GBA ROM|*.gba|ALL|*.*'
