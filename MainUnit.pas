@@ -10,7 +10,12 @@ const
   cFmt = '%3d ($%.2x)';
 
 
+
 type
+  tPalEntry = cardinal;
+  tPalette = array[0..255] of tPalEntry;
+  pPalette = ^tPalette;
+
   tVisual = record
     Name:    string[20];
     Address: cardinal;
@@ -21,6 +26,9 @@ type
     Kind,
     BPP,
     CmpType: byte;
+    Pal:     tPalette;
+    PalAdr:  cardinal;
+    PalNum:  cardinal;
   end;
   pVisual = ^tVisual;
 
@@ -65,11 +73,19 @@ type
     bAddAddress: TSpeedButton;
     bDelAddress: TSpeedButton;
     eAddress: TEdit;
+    seZoom: TSpinEdit;
+    Label8: TLabel;
+    bSave: TSpeedButton;
+    SaveDialog: TSaveDialog;
+    bLoad: TSpeedButton;
     procedure bOpenROMClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure lbListClick(Sender: TObject);
     procedure ValueChange(Sender: TObject);
     procedure bAddAddressClick(Sender: TObject);
+    procedure seZoomChange(Sender: TObject);
+    procedure bSaveClick(Sender: TObject);
+    procedure bLoadClick(Sender: TObject);
   private
     ROM: array of byte;
     NoChange: boolean;
@@ -120,10 +136,11 @@ end;
 
 procedure TfmMain.FormCreate(Sender: TObject);
 begin
-  lbList.AddItem(cGoblin.Name, @cGoblin);
-  lbList.AddItem(cCrab.Name, @cCrab);
+  //lbList.AddItem(cGoblin.Name, @cGoblin);
+  //lbList.AddItem(cCrab.Name, @cCrab);
 
-  LoadROM('D:\Emulators\GBA\ROM\2564 - Final Fantasy V Advance (U)(Independent).gba');
+//  LoadROM('D:\Emulators\GBA\ROM\2564 - Final Fantasy V Advance (U)(Independent).gba');
+  LoadROM('s:\2564 - Final Fantasy V Advance (U)(Independent).gba');
 end;
 
 
@@ -131,7 +148,7 @@ procedure TfmMain.UpdatePreview;
 begin
   fmMain.Repaint;
   ConvertTileGBA(@buf[Spr.Off], @MobTiles, Spr.W * Spr.H);
-  DrawMobSpriteGBA(fmMain.Handle, 170, 60, Spr.W, Spr.H, 2, false, @MobTiles, @cPal16)
+  DrawMobSpriteGBA(fmMain.Handle, 170, 60, Spr.W, Spr.H, seZoom.Value, false, @MobTiles, @Spr.Pal)
 end;
 
 
@@ -167,11 +184,13 @@ begin
   Spr.Name := eName.Text;
   lbList.Items[lbList.ItemIndex] := Spr.Name;
 
-  UpdatePreview;
+  if Sender <> eName then UpdatePreview;
 end;
 
+
 procedure TfmMain.bAddAddressClick(Sender: TObject);
-  var v: pVisual;
+  var i: integer;
+      v: pVisual;
 begin
   New(v);
   v.Address := StrToInt(eAddress.Text);
@@ -180,7 +199,50 @@ begin
   v.H    := 1;
   v.W    := 1;
   v.Off  := 8;
+
+  for i:= 0 to 15 do v.Pal[i] := cPal16[i];
   lbList.AddItem(v.Name, tObject(v));
 end;
+
+procedure TfmMain.seZoomChange(Sender: TObject);
+begin
+  UpdatePreview;
+end;
+
+
+procedure TfmMain.bSaveClick(Sender: TObject);
+  var i: integer;
+      f: file of tVisual;
+begin
+  if not SaveDialog.Execute then exit;
+
+  AssignFile(f, SaveDialog.FileName);
+  Rewrite(f);
+  for i := 0 to lbList.Count -1 do
+    Write(f, pVisual(lbList.Items.Objects[i])^);
+  CloseFile(f);
+end;
+
+
+procedure TfmMain.bLoadClick(Sender: TObject);
+  var i, n: integer;
+      f: file of tVisual;
+      v: pVisual;
+begin
+  OpenDialog.Filter := 'Visual SAK (*.vsk)|*.vsk|ALL (*.*)|*.*';
+  if not OpenDialog.Execute then exit;
+
+  AssignFile(f, OpenDialog.FileName);
+  Reset(f);
+  n := FileSize(f);  // return number of records, no size in bytes
+  lbList.Clear;
+  for i := 1 to n do begin
+    New(v);
+    Read(f, v^);
+    lbList.AddItem(v.Name, tObject(v));
+  end;
+  CloseFile(f);
+end;
+
 
 end.

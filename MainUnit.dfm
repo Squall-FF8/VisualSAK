@@ -1,6 +1,6 @@
 object fmMain: TfmMain
-  Left = 336
-  Top = 124
+  Left = 337
+  Top = 113
   Width = 829
   Height = 527
   Caption = 'fmMain'
@@ -14,7 +14,7 @@ object fmMain: TfmMain
   OnCreate = FormCreate
   DesignSize = (
     813
-    489)
+    488)
   PixelsPerInch = 96
   TextHeight = 13
   object bOpenROM: TSpeedButton
@@ -354,14 +354,14 @@ object fmMain: TfmMain
     Caption = 'Name:'
   end
   object Label6: TLabel
-    Left = 512
+    Left = 504
     Top = 16
     Width = 46
     Height = 13
     Caption = 'Raw size:'
   end
   object Label7: TLabel
-    Left = 616
+    Left = 592
     Top = 16
     Width = 82
     Height = 13
@@ -382,6 +382,29 @@ object fmMain: TfmMain
     Height = 22
     Caption = '-'
   end
+  object Label8: TLabel
+    Left = 104
+    Top = 16
+    Width = 27
+    Height = 13
+    Caption = 'Zoom'
+  end
+  object bSave: TSpeedButton
+    Left = 688
+    Top = 32
+    Width = 33
+    Height = 22
+    Caption = 'Save'
+    OnClick = bSaveClick
+  end
+  object bLoad: TSpeedButton
+    Left = 728
+    Top = 32
+    Width = 33
+    Height = 22
+    Caption = 'Load'
+    OnClick = bLoadClick
+  end
   object lbList: TListBox
     Left = 4
     Top = 60
@@ -397,8 +420,8 @@ object fmMain: TfmMain
     Top = 32
     Width = 41
     Height = 22
-    MaxValue = 0
-    MinValue = 0
+    MaxValue = 2000
+    MinValue = 1
     TabOrder = 1
     Value = 0
     OnChange = ValueChange
@@ -408,8 +431,8 @@ object fmMain: TfmMain
     Top = 32
     Width = 41
     Height = 22
-    MaxValue = 0
-    MinValue = 0
+    MaxValue = 2000
+    MinValue = 1
     TabOrder = 2
     Value = 0
     OnChange = ValueChange
@@ -448,15 +471,15 @@ object fmMain: TfmMain
   object eSizeRaw: TEdit
     Left = 504
     Top = 32
-    Width = 97
+    Width = 81
     Height = 21
     ReadOnly = True
     TabOrder = 6
   end
   object eSizeCmp: TEdit
-    Left = 608
+    Left = 592
     Top = 32
-    Width = 97
+    Width = 81
     Height = 21
     ReadOnly = True
     TabOrder = 7
@@ -469,9 +492,26 @@ object fmMain: TfmMain
     TabOrder = 8
     Text = '$1C7D04'
   end
+  object seZoom: TSpinEdit
+    Left = 104
+    Top = 32
+    Width = 41
+    Height = 22
+    MaxValue = 4
+    MinValue = 1
+    TabOrder = 9
+    Value = 2
+    OnChange = seZoomChange
+  end
   object OpenDialog: TOpenDialog
     Filter = 'SNES/GBA ROM|*.smc; *.gba|SNES ROM|*.smc|GBA ROM|*.gba|ALL|*.*'
     Left = 16
     Top = 79
+  end
+  object SaveDialog: TSaveDialog
+    DefaultExt = 'vsk'
+    Filter = 'Visual SAK (*.vsk)|*.vsk|ALL (*.*)|*.*'
+    Left = 48
+    Top = 80
   end
 end
