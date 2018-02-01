@@ -1,7 +1,7 @@
 object fmMain: TfmMain
   Left = 337
   Top = 113
-  Width = 829
+  Width = 970
   Height = 527
   Caption = 'fmMain'
   Color = clBtnFace
@@ -12,8 +12,9 @@ object fmMain: TfmMain
   Font.Style = []
   OldCreateOrder = False
   OnCreate = FormCreate
+  OnShow = FormShow
   DesignSize = (
-    813
+    954
     488)
   PixelsPerInch = 96
   TextHeight = 13
@@ -381,6 +382,7 @@ object fmMain: TfmMain
     Width = 23
     Height = 22
     Caption = '-'
+    OnClick = bDelAddressClick
   end
   object Label8: TLabel
     Left = 104
@@ -405,6 +407,13 @@ object fmMain: TfmMain
     Caption = 'Load'
     OnClick = bLoadClick
   end
+  object SpeedButton1: TSpeedButton
+    Left = 336
+    Top = 400
+    Width = 23
+    Height = 22
+    OnClick = SpeedButton1Click
+  end
   object lbList: TListBox
     Left = 4
     Top = 60
@@ -423,7 +432,7 @@ object fmMain: TfmMain
     MaxValue = 2000
     MinValue = 1
     TabOrder = 1
-    Value = 0
+    Value = 1
     OnChange = ValueChange
   end
   object seHeight: TSpinEdit
@@ -434,7 +443,7 @@ object fmMain: TfmMain
     MaxValue = 2000
     MinValue = 1
     TabOrder = 2
-    Value = 0
+    Value = 1
     OnChange = ValueChange
   end
   object seOffset: TSpinEdit
@@ -503,6 +512,28 @@ object fmMain: TfmMain
     Value = 2
     OnChange = seZoomChange
   end
+  object gPal: TDrawGrid
+    Left = 689
+    Top = 64
+    Width = 256
+    Height = 256
+    Cursor = crHandPoint
+    Anchors = [akTop, akRight]
+    BorderStyle = bsNone
+    ColCount = 16
+    DefaultColWidth = 16
+    DefaultRowHeight = 16
+    DefaultDrawing = False
+    FixedCols = 0
+    RowCount = 16
+    FixedRows = 0
+    GridLineWidth = 0
+    Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine]
+    ScrollBars = ssNone
+    TabOrder = 10
+    OnDrawCell = gPalDrawCell
+    OnMouseUp = gPalMouseUp
+  end
   object OpenDialog: TOpenDialog
     Filter = 'SNES/GBA ROM|*.smc; *.gba|SNES ROM|*.smc|GBA ROM|*.gba|ALL|*.*'
     Left = 16
@@ -512,6 +543,11 @@ object fmMain: TfmMain
     DefaultExt = 'vsk'
     Filter = 'Visual SAK (*.vsk)|*.vsk|ALL (*.*)|*.*'
     Left = 48
+    Top = 80
+  end
+  object ColorDialog: TColorDialog
+    Options = [cdFullOpen]
+    Left = 80
     Top = 80
   end
 end

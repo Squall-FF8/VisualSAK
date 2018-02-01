@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, Buttons, StdCtrls, Spin;
+  Dialogs, Buttons, StdCtrls, Spin, Grids;
 
 const
   cFmt = '%3d ($%.2x)';
@@ -31,24 +31,6 @@ type
     PalNum:  cardinal;
   end;
   pVisual = ^tVisual;
-
-const
-  cGoblin: tVisual = (
-    Name: 'Goblin';
-    Address: $1C7E54;
-    W:   4;
-    H:   5;
-    Off: 8;
-    BPP: 4;
-    );
-  cCrab: tVisual = (
-    Name: 'Devil Crab';
-    Address: $1C887C;
-    W:   6;
-    H:   3;
-    Off: 8;
-    BPP: 4;
-    );
 
 
 type
@@ -78,6 +60,9 @@ type
     bSave: TSpeedButton;
     SaveDialog: TSaveDialog;
     bLoad: TSpeedButton;
+    SpeedButton1: TSpeedButton;
+    gPal: TDrawGrid;
+    ColorDialog: TColorDialog;
     procedure bOpenROMClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure lbListClick(Sender: TObject);
@@ -86,6 +71,13 @@ type
     procedure seZoomChange(Sender: TObject);
     procedure bSaveClick(Sender: TObject);
     procedure bLoadClick(Sender: TObject);
+    procedure bDelAddressClick(Sender: TObject);
+    procedure FormShow(Sender: TObject);
+    procedure gPalDrawCell(Sender: TObject; ACol, ARow: Integer;
+      Rect: TRect; State: TGridDrawState);
+    procedure SpeedButton1Click(Sender: TObject);
+    procedure gPalMouseUp(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
   private
     ROM: array of byte;
     NoChange: boolean;
@@ -112,6 +104,8 @@ var
   Spr: pVisual;
   Buf: tLZStream;
   MobTiles: array[0..1000, 0..7, 0..7] of byte;
+  Pal: tPalette;
+
 
 
 procedure TfmMain.LoadROM(const FileName:string);
@@ -134,8 +128,16 @@ begin
 end;
 
 
+procedure TfmMain.FormShow(Sender: TObject);
+begin
+  //CreatePalVisuals;  // doesn't work on Create. Why?
+end;
+
+
 procedure TfmMain.FormCreate(Sender: TObject);
 begin
+  //CreatePalVisuals;
+
   //lbList.AddItem(cGoblin.Name, @cGoblin);
   //lbList.AddItem(cCrab.Name, @cCrab);
 
@@ -244,5 +246,49 @@ begin
   CloseFile(f);
 end;
 
+
+procedure TfmMain.bDelAddressClick(Sender: TObject);
+  var ind: integer;
+begin
+  ind := lbList.ItemIndex;
+  if ind < 0 then exit;
+
+  lbList.Items.Delete(ind);
+  if ind = lbList.Count then dec(ind);
+  if ind < 0 then exit;
+  lbList.Selected[ind] := true;
+end;
+
+
+procedure TfmMain.gPalDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
+  var r: cardinal;
+begin
+  r := aCol + aRow shl 4;
+  gPal.Canvas.Brush.Color := Pal[r]{r + r shl 8 + r shl 16};
+  gPal.Canvas.Rectangle(Rect);
+  DrawEdge(gPal.Canvas.Handle, Rect, EDGE_SUNKEN, BF_RECT);
+end;
+
+
+procedure TfmMain.SpeedButton1Click(Sender: TObject);
+begin
+  Move(cPal16, Pal, 16*4);
+  gPal.Repaint;
+end;
+
+
+procedure TfmMain.gPalMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+  var c, r, i: integer;
+begin
+  if not ColorDialog.Execute then exit;
+
+  gPal.MouseToCell(X, Y, c, r);
+  i := c + r shl 4;
+  Pal[i] := ColorDialog.Color;
+
+  if lbList.ItemIndex < 0 then exit;
+  pVisual(lbList.Items.Objects[lbList.ItemIndex]).Pal[i] := ColorDialog.Color;
+  UpdatePreview;
+end;
 
 end.
