@@ -63,6 +63,11 @@ type
     SpeedButton1: TSpeedButton;
     gPal: TDrawGrid;
     ColorDialog: TColorDialog;
+    bLoadPalROM: TSpeedButton;
+    ePalAddress: TEdit;
+    sePalNum: TSpinEdit;
+    Label9: TLabel;
+    Label10: TLabel;
     procedure bOpenROMClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure lbListClick(Sender: TObject);
@@ -78,6 +83,7 @@ type
     procedure SpeedButton1Click(Sender: TObject);
     procedure gPalMouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
+    procedure bLoadPalROMClick(Sender: TObject);
   private
     ROM: array of byte;
     NoChange: boolean;
@@ -100,12 +106,27 @@ const
     $E0E0E0, $111111, $222222, $333333, $444444, $555555, $666666, $777777,
     $888888, $999999, $AAAAAA, $BBBBBB, $CCCCCC, $DDDDDD, $EEEEEE, $FFFFFF);
 
+{  cPal256: tPalette = (
+    $000000, $010101, $020202, $030303, $040404, $050505, $060606, $070707, $080808, $090909, $0A0A0A, $0B0B0B, $0C0C0C, $0D0D0D, $0E0E0E, $0F0F0F,
+    $101010, $111111, $121212, $131313, $141414, $151515, $161616, $171717, $181818, $191919, $1A1A1A, $1B1B1B, $1C1C1C, $1D1D1D, $1E1E1E, $1F1F1F,
+    $202020, $212121, $222222, $232323, $242424, $252525, $262626, $272727, $080808, $090909, $0A0A0A, $0B0B0B, $0C0C0C, $0D0D0D, $0E0E0E, $0F0F0F,
+    $303030, $313131, $323232, $333333, $343434, $353535, $363636, $373737, $383838, $393939, $3A3A3A, $3B3B3B, $3C3C3C, $3D3D3D, $3E3E3E, $3F3F3F,}
+
 var
   Spr: pVisual;
   Buf: tLZStream;
   MobTiles: array[0..1000, 0..7, 0..7] of byte;
   Pal: tPalette;
 
+
+procedure MakeMonoPal(var Pal: tPalette; NumCols: byte);
+  var i, r: integer;
+begin
+  for i:= 0 to NumCols -1 do begin
+    r := (i * 256) div NumCols + i;
+    Pal[i] := R + R shl 8 + R shl 16;
+  end;
+end;
 
 
 procedure TfmMain.LoadROM(const FileName:string);
@@ -141,8 +162,9 @@ begin
   //lbList.AddItem(cGoblin.Name, @cGoblin);
   //lbList.AddItem(cCrab.Name, @cCrab);
 
-//  LoadROM('D:\Emulators\GBA\ROM\2564 - Final Fantasy V Advance (U)(Independent).gba');
-  LoadROM('s:\2564 - Final Fantasy V Advance (U)(Independent).gba');
+  LoadROM('D:\Emulators\GBA\ROM\2564 - Final Fantasy V Advance (U)(Independent).gba');
+//  LoadROM('D:\Emulators\GBA\ROM\1805 - Final Fantasy I & II - Dawn of Souls (U)(Independent).gba');
+//  LoadROM('s:\2564 - Final Fantasy V Advance (U)(Independent).gba');
 end;
 
 
@@ -150,7 +172,7 @@ procedure TfmMain.UpdatePreview;
 begin
   fmMain.Repaint;
   ConvertTileGBA(@buf[Spr.Off], @MobTiles, Spr.W * Spr.H);
-  DrawMobSpriteGBA(fmMain.Handle, 170, 60, Spr.W, Spr.H, seZoom.Value, false, @MobTiles, @Spr.Pal)
+  DrawMobSpriteGBA(fmMain.Handle, 170, 60, Spr.W, Spr.H, seZoom.Value, true, @MobTiles, @Spr.Pal)
 end;
 
 
@@ -171,7 +193,10 @@ begin
   eSizeCmp.Text  := format(cFmt, [Spr.SizeCmp, Spr.SizeCmp]);
   NoChange := false;
 
-  UpdatePreview
+  UpdatePreview;
+
+  Move(Spr.Pal, Pal, Spr.PalNum * 4);
+  gPal.Repaint;
 end;
 
 
@@ -191,8 +216,7 @@ end;
 
 
 procedure TfmMain.bAddAddressClick(Sender: TObject);
-  var i: integer;
-      v: pVisual;
+  var v: pVisual;
 begin
   New(v);
   v.Address := StrToInt(eAddress.Text);
@@ -202,7 +226,8 @@ begin
   v.W    := 1;
   v.Off  := 8;
 
-  for i:= 0 to 15 do v.Pal[i] := cPal16[i];
+  v.PalNum := 16;
+  MakeMonoPal(v.Pal, 16);
   lbList.AddItem(v.Name, tObject(v));
 end;
 
@@ -280,14 +305,35 @@ end;
 procedure TfmMain.gPalMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
   var c, r, i: integer;
 begin
-  if not ColorDialog.Execute then exit;
-
   gPal.MouseToCell(X, Y, c, r);
   i := c + r shl 4;
+  ColorDialog.Color := Pal[i];
+  if not ColorDialog.Execute then exit;
+
   Pal[i] := ColorDialog.Color;
 
   if lbList.ItemIndex < 0 then exit;
   pVisual(lbList.Items.Objects[lbList.ItemIndex]).Pal[i] := ColorDialog.Color;
+  UpdatePreview;
+end;
+
+
+procedure TfmMain.bLoadPalROMClick(Sender: TObject);
+  var i: integer;
+      p: pWord;
+      R, G, B: byte;
+begin
+  p := @ROM[StrToInt(ePalAddress.Text)];
+  for i := 0 to sePalNum.Value -1 do begin
+    R := p^ and $1F;
+    G := (p^ shr 5) and $1F;
+    B := (p^shr 10) and $1F;
+    Pal[i] := (R * 255) div 31 + ((G*255) div 31) shl 8 + ((B*255) div 31 ) shl 16;
+    inc(p);
+  end;
+  gPal.Repaint;
+
+  Move(Pal, Spr.Pal, Spr.PalNum * 4);
   UpdatePreview;
 end;
 

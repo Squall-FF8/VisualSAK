@@ -1,6 +1,6 @@
 object fmMain: TfmMain
-  Left = 337
-  Top = 113
+  Left = 474
+  Top = 373
   Width = 970
   Height = 527
   Caption = 'fmMain'
@@ -15,7 +15,7 @@ object fmMain: TfmMain
   OnShow = FormShow
   DesignSize = (
     954
-    488)
+    489)
   PixelsPerInch = 96
   TextHeight = 13
   object bOpenROM: TSpeedButton
@@ -414,6 +414,30 @@ object fmMain: TfmMain
     Height = 22
     OnClick = SpeedButton1Click
   end
+  object bLoadPalROM: TSpeedButton
+    Left = 864
+    Top = 344
+    Width = 81
+    Height = 22
+    Caption = 'Load from ROM'
+    Layout = blGlyphBottom
+    Spacing = 0
+    OnClick = bLoadPalROMClick
+  end
+  object Label9: TLabel
+    Left = 696
+    Top = 328
+    Width = 77
+    Height = 13
+    Caption = 'Palette Address:'
+  end
+  object Label10: TLabel
+    Left = 808
+    Top = 328
+    Width = 40
+    Height = 13
+    Caption = 'PalNum:'
+  end
   object lbList: TListBox
     Left = 4
     Top = 60
@@ -533,6 +557,24 @@ object fmMain: TfmMain
     TabOrder = 10
     OnDrawCell = gPalDrawCell
     OnMouseUp = gPalMouseUp
+  end
+  object ePalAddress: TEdit
+    Left = 696
+    Top = 344
+    Width = 105
+    Height = 21
+    TabOrder = 11
+    Text = 'ePalAddress'
+  end
+  object sePalNum: TSpinEdit
+    Left = 808
+    Top = 344
+    Width = 49
+    Height = 22
+    MaxValue = 256
+    MinValue = 1
+    TabOrder = 12
+    Value = 16
   end
   object OpenDialog: TOpenDialog
     Filter = 'SNES/GBA ROM|*.smc; *.gba|SNES ROM|*.smc|GBA ROM|*.gba|ALL|*.*'
