@@ -1,6 +1,6 @@
 object fmMain: TfmMain
-  Left = 474
-  Top = 373
+  Left = 374
+  Top = 333
   Width = 970
   Height = 527
   Caption = 'fmMain'
@@ -11,11 +11,11 @@ object fmMain: TfmMain
   Font.Name = 'MS Sans Serif'
   Font.Style = []
   OldCreateOrder = False
+  Position = poDesktopCenter
   OnCreate = FormCreate
-  OnShow = FormShow
   DesignSize = (
     954
-    489)
+    488)
   PixelsPerInch = 96
   TextHeight = 13
   object bOpenROM: TSpeedButton
@@ -415,13 +415,16 @@ object fmMain: TfmMain
     Caption = 'Load'
     OnClick = bLoadClick
   end
-  object SpeedButton1: TSpeedButton
+  object bPalMono16: TSpeedButton
     Left = 872
     Top = 392
     Width = 23
     Height = 22
+    Hint = 'Make Palette Monochrome (16)'
     Anchors = [akTop, akRight]
-    OnClick = SpeedButton1Click
+    ParentShowHint = False
+    ShowHint = True
+    OnClick = bPalMono16Click
   end
   object bLoadPalROM: TSpeedButton
     Left = 864
@@ -457,6 +460,25 @@ object fmMain: TfmMain
     Height = 13
     Anchors = [akTop, akRight]
     Caption = 'Tile Address:'
+  end
+  object bNew: TSpeedButton
+    Left = 768
+    Top = 32
+    Width = 33
+    Height = 22
+    Caption = 'New'
+    OnClick = bNewClick
+  end
+  object bPalMono256: TSpeedButton
+    Left = 896
+    Top = 392
+    Width = 23
+    Height = 22
+    Hint = 'Make Palette Monochrome (256)'
+    Anchors = [akTop, akRight]
+    ParentShowHint = False
+    ShowHint = True
+    OnClick = bPalMono256Click
   end
   object lbList: TListBox
     Left = 4

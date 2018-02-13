@@ -60,7 +60,7 @@ type
     bSave: TSpeedButton;
     SaveDialog: TSaveDialog;
     bLoad: TSpeedButton;
-    SpeedButton1: TSpeedButton;
+    bPalMono16: TSpeedButton;
     gPal: TDrawGrid;
     ColorDialog: TColorDialog;
     bLoadPalROM: TSpeedButton;
@@ -69,6 +69,8 @@ type
     Label9: TLabel;
     Label10: TLabel;
     Label11: TLabel;
+    bNew: TSpeedButton;
+    bPalMono256: TSpeedButton;
     procedure bOpenROMClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure lbListClick(Sender: TObject);
@@ -78,20 +80,22 @@ type
     procedure bSaveClick(Sender: TObject);
     procedure bLoadClick(Sender: TObject);
     procedure bDelAddressClick(Sender: TObject);
-    procedure FormShow(Sender: TObject);
     procedure gPalDrawCell(Sender: TObject; ACol, ARow: Integer;
       Rect: TRect; State: TGridDrawState);
-    procedure SpeedButton1Click(Sender: TObject);
+    procedure bPalMono16Click(Sender: TObject);
     procedure gPalMouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure bLoadPalROMClick(Sender: TObject);
     procedure eAddressKeyPress(Sender: TObject; var Key: Char);
+    procedure bPalMono256Click(Sender: TObject);
+    procedure bNewClick(Sender: TObject);
   private
     ROM: array of byte;
     NoChange: boolean;
 
     procedure LoadROM(const FileName:string);
     procedure UpdatePreview;
+    procedure EmptyList;
   public
   end;
 
@@ -121,14 +125,22 @@ var
   Pal: tPalette;
 
 
-procedure MakeMonoPal(var Pal: tPalette; NumCols: byte);
+procedure MakeMonoPal16(var Pal: tPalette);
   var i, r: integer;
 begin
-  for i:= 0 to NumCols -1 do begin
-    r := (i * 256) div NumCols + i;
+  for i:= 0 to 15 do begin
+    r := i shl 4 + i;
     Pal[i] := R + R shl 8 + R shl 16;
   end;
 end;
+
+procedure MakeMonoPal256(var Pal: tPalette);
+  var i: integer;
+begin
+  for i:= 0 to 255 do
+    Pal[i] := i + i shl 8 + i shl 16;
+end;
+
 
 
 procedure TfmMain.LoadROM(const FileName:string);
@@ -146,27 +158,17 @@ end;
 
 procedure TfmMain.bOpenROMClick(Sender: TObject);
 begin
+  OpenDialog.Filter := 'SNES/GBA ROM|*.smc; *.gba|SNES ROM|*.smc|GBA ROM|*.gba|ALL|*.*';
   if OpenDialog.Execute then
     LoadROM(OpenDialog.FileName)
 end;
 
 
-procedure TfmMain.FormShow(Sender: TObject);
-begin
-  //CreatePalVisuals;  // doesn't work on Create. Why?
-end;
-
-
 procedure TfmMain.FormCreate(Sender: TObject);
 begin
-  //CreatePalVisuals;
-
-  //lbList.AddItem(cGoblin.Name, @cGoblin);
-  //lbList.AddItem(cCrab.Name, @cCrab);
-
-  LoadROM('D:\Emulators\GBA\ROM\2564 - Final Fantasy V Advance (U)(Independent).gba');
+//  LoadROM('D:\Emulators\GBA\ROM\2564 - Final Fantasy V Advance (U)(Independent).gba');
 //  LoadROM('D:\Emulators\GBA\ROM\1805 - Final Fantasy I & II - Dawn of Souls (U)(Independent).gba');
-//  LoadROM('s:\2564 - Final Fantasy V Advance (U)(Independent).gba');
+  LoadROM('s:\2564 - Final Fantasy V Advance (U)(Independent).gba');
 end;
 
 
@@ -231,7 +233,7 @@ begin
   v.Off  := 8;
 
   v.PalNum := 16;
-  MakeMonoPal(v.Pal, 16);
+  MakeMonoPal16(v.Pal);
   lbList.AddItem(v.Name, tObject(v));
 end;
 
@@ -266,7 +268,7 @@ begin
   AssignFile(f, OpenDialog.FileName);
   Reset(f);
   n := FileSize(f);  // return number of records, no size in bytes
-  lbList.Clear;
+  EmptyList;
   for i := 1 to n do begin
     New(v);
     Read(f, v^);
@@ -299,10 +301,29 @@ begin
 end;
 
 
-procedure TfmMain.SpeedButton1Click(Sender: TObject);
+procedure TfmMain.bPalMono16Click(Sender: TObject);
 begin
-  Move(cPal16, Pal, 16*4);
+  MakeMonoPal16(Pal);
+  ZeroMemory(@Pal[17], 240*4);
   gPal.Repaint;
+
+  if Spr = nil then exit;
+  Spr.PalNum := 16;
+  MakeMonoPal16(Spr.Pal);
+  UpdatePreview;
+end;
+
+
+procedure TfmMain.bPalMono256Click(Sender: TObject);
+begin
+  MakeMonoPal256(Pal);
+  gPal.Repaint;
+
+  if Spr = nil then exit;
+  Spr.PalNum := 256;
+  MakeMonoPal256(Spr.Pal);
+  UpdatePreview;
+
 end;
 
 
@@ -350,5 +371,22 @@ begin
     bAddAddressClick(nil);
   end;
 end;
+
+
+procedure TfmMain.bNewClick(Sender: TObject);
+begin
+  EmptyList;
+  Spr := nil;
+end;
+
+
+procedure TfmMain.EmptyList;
+  var i: integer;
+begin
+  for i := 0 to lbList.Count - 1 do
+    Dispose(pointer(lbList.Items.Objects[i]));
+  lbList.Clear;
+end;
+
 
 end.
