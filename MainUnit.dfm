@@ -369,19 +369,27 @@ object fmMain: TfmMain
     Caption = 'Compressed size:'
   end
   object bAddAddress: TSpeedButton
-    Left = 176
-    Top = 376
+    Left = 808
+    Top = 392
     Width = 23
     Height = 22
+    Hint = 'Add Address to the List'
+    Anchors = [akTop, akRight]
     Caption = '+'
+    ParentShowHint = False
+    ShowHint = True
     OnClick = bAddAddressClick
   end
   object bDelAddress: TSpeedButton
-    Left = 216
-    Top = 376
+    Left = 840
+    Top = 392
     Width = 23
     Height = 22
+    Hint = 'Delete Selected'
+    Anchors = [akTop, akRight]
     Caption = '-'
+    ParentShowHint = False
+    ShowHint = True
     OnClick = bDelAddressClick
   end
   object Label8: TLabel
@@ -408,10 +416,11 @@ object fmMain: TfmMain
     OnClick = bLoadClick
   end
   object SpeedButton1: TSpeedButton
-    Left = 336
-    Top = 400
+    Left = 872
+    Top = 392
     Width = 23
     Height = 22
+    Anchors = [akTop, akRight]
     OnClick = SpeedButton1Click
   end
   object bLoadPalROM: TSpeedButton
@@ -419,6 +428,7 @@ object fmMain: TfmMain
     Top = 344
     Width = 81
     Height = 22
+    Anchors = [akTop, akRight]
     Caption = 'Load from ROM'
     Layout = blGlyphBottom
     Spacing = 0
@@ -429,6 +439,7 @@ object fmMain: TfmMain
     Top = 328
     Width = 77
     Height = 13
+    Anchors = [akTop, akRight]
     Caption = 'Palette Address:'
   end
   object Label10: TLabel
@@ -436,7 +447,16 @@ object fmMain: TfmMain
     Top = 328
     Width = 40
     Height = 13
+    Anchors = [akTop, akRight]
     Caption = 'PalNum:'
+  end
+  object Label11: TLabel
+    Left = 696
+    Top = 376
+    Width = 61
+    Height = 13
+    Anchors = [akTop, akRight]
+    Caption = 'Tile Address:'
   end
   object lbList: TListBox
     Left = 4
@@ -518,12 +538,14 @@ object fmMain: TfmMain
     TabOrder = 7
   end
   object eAddress: TEdit
-    Left = 168
-    Top = 352
-    Width = 121
+    Left = 696
+    Top = 392
+    Width = 105
     Height = 21
+    Anchors = [akTop, akRight]
     TabOrder = 8
     Text = '$1C7D04'
+    OnKeyPress = eAddressKeyPress
   end
   object seZoom: TSpinEdit
     Left = 104
@@ -563,14 +585,15 @@ object fmMain: TfmMain
     Top = 344
     Width = 105
     Height = 21
+    Anchors = [akTop, akRight]
     TabOrder = 11
-    Text = 'ePalAddress'
   end
   object sePalNum: TSpinEdit
     Left = 808
     Top = 344
     Width = 49
     Height = 22
+    Anchors = [akTop, akRight]
     MaxValue = 256
     MinValue = 1
     TabOrder = 12

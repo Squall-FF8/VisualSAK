@@ -68,6 +68,7 @@ type
     sePalNum: TSpinEdit;
     Label9: TLabel;
     Label10: TLabel;
+    Label11: TLabel;
     procedure bOpenROMClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure lbListClick(Sender: TObject);
@@ -84,6 +85,7 @@ type
     procedure gPalMouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure bLoadPalROMClick(Sender: TObject);
+    procedure eAddressKeyPress(Sender: TObject; var Key: Char);
   private
     ROM: array of byte;
     NoChange: boolean;
@@ -191,6 +193,8 @@ begin
   eName.Text     := Spr.Name;
   eSizeRaw.Text  := format(cFmt, [Spr.SizeRaw, Spr.SizeRaw]);
   eSizeCmp.Text  := format(cFmt, [Spr.SizeCmp, Spr.SizeCmp]);
+  eAddress.Text  := format('$%.6x',[Spr.Address]);
+  ePalAddress.Text := format('$%.6x',[Spr.PalAdr]);
   NoChange := false;
 
   UpdatePreview;
@@ -323,7 +327,8 @@ procedure TfmMain.bLoadPalROMClick(Sender: TObject);
       p: pWord;
       R, G, B: byte;
 begin
-  p := @ROM[StrToInt(ePalAddress.Text)];
+  Spr.PalAdr := StrToInt(ePalAddress.Text);
+  p := @ROM[Spr.PalAdr];
   for i := 0 to sePalNum.Value -1 do begin
     R := p^ and $1F;
     G := (p^ shr 5) and $1F;
@@ -335,6 +340,15 @@ begin
 
   Move(Pal, Spr.Pal, Spr.PalNum * 4);
   UpdatePreview;
+end;
+
+
+procedure TfmMain.eAddressKeyPress(Sender: TObject; var Key: Char);
+begin
+  if Key = #13 then begin
+    Key := #0;
+    bAddAddressClick(nil);
+  end;
 end;
 
 end.
