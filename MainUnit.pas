@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, Buttons, StdCtrls, Spin, Grids;
+  Dialogs, Buttons, StdCtrls, Spin, Grids, pngextra;
 
 const
   cFmt = '%3d ($%.2x)';
@@ -52,25 +52,25 @@ type
     Label6: TLabel;
     Label7: TLabel;
     eSizeCmp: TEdit;
-    bAddAddress: TSpeedButton;
-    bDelAddress: TSpeedButton;
     eAddress: TEdit;
     seZoom: TSpinEdit;
     Label8: TLabel;
-    bSave: TSpeedButton;
     SaveDialog: TSaveDialog;
-    bLoad: TSpeedButton;
-    bPalMono16: TSpeedButton;
     gPal: TDrawGrid;
     ColorDialog: TColorDialog;
-    bLoadPalROM: TSpeedButton;
     ePalAddress: TEdit;
     sePalNum: TSpinEdit;
     Label9: TLabel;
     Label10: TLabel;
     Label11: TLabel;
-    bNew: TSpeedButton;
-    bPalMono256: TSpeedButton;
+    bSave: TPNGButton;
+    bLoad: TPNGButton;
+    bNew: TPNGButton;
+    bLoadPalROM: TPNGButton;
+    bPalMono16: TPNGButton;
+    bPalMono256: TPNGButton;
+    bAddAddress: TPNGButton;
+    bDelAddress: TPNGButton;
     procedure bOpenROMClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure lbListClick(Sender: TObject);
@@ -125,7 +125,7 @@ var
   Pal: tPalette;
 
 
-procedure MakeMonoPal16(var Pal: tPalette);
+{procedure MakeMonoPal16(var Pal: tPalette);
   var i, r: integer;
 begin
   for i:= 0 to 15 do begin
@@ -140,6 +140,17 @@ begin
   for i:= 0 to 255 do
     Pal[i] := i + i shl 8 + i shl 16;
 end;
+}
+procedure MakeMonoPal(var Pal: tPalette; Num: integer);
+  var i, r: integer;
+begin
+  for i:= 0 to Num - 1 do begin
+//    r := i * 256 div Num + i* 256 div (Num * Num);
+    r := (i * 255) div (Num -1);
+    Pal[i] := R + R shl 8 + R shl 16;
+  end;
+end;
+
 
 
 
@@ -233,7 +244,7 @@ begin
   v.Off  := 8;
 
   v.PalNum := 16;
-  MakeMonoPal16(v.Pal);
+  MakeMonoPal(v.Pal, 16);
   lbList.AddItem(v.Name, tObject(v));
 end;
 
@@ -303,25 +314,25 @@ end;
 
 procedure TfmMain.bPalMono16Click(Sender: TObject);
 begin
-  MakeMonoPal16(Pal);
-  ZeroMemory(@Pal[17], 240*4);
+  ZeroMemory(@Pal[0], 256*4);
+  MakeMonoPal(Pal, 16);
   gPal.Repaint;
 
   if Spr = nil then exit;
   Spr.PalNum := 16;
-  MakeMonoPal16(Spr.Pal);
+  MakeMonoPal(Spr.Pal, 16);
   UpdatePreview;
 end;
 
 
 procedure TfmMain.bPalMono256Click(Sender: TObject);
 begin
-  MakeMonoPal256(Pal);
+  MakeMonoPal(Pal, 256);
   gPal.Repaint;
 
   if Spr = nil then exit;
   Spr.PalNum := 256;
-  MakeMonoPal256(Spr.Pal);
+  MakeMonoPal(Spr.Pal, 256);
   UpdatePreview;
 
 end;
