@@ -44,8 +44,6 @@ type
     seHeight: TSpinEdit;
     Label3: TLabel;
     seOffset: TSpinEdit;
-    Label4: TLabel;
-    seBPP: TSpinEdit;
     eName: TEdit;
     Label5: TLabel;
     eSizeRaw: TEdit;
@@ -71,6 +69,8 @@ type
     bPalMono256: TPNGButton;
     bAddAddress: TPNGButton;
     bDelAddress: TPNGButton;
+    ComboBox1: TComboBox;
+    Label12: TLabel;
     procedure bOpenROMClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure lbListClick(Sender: TObject);
@@ -89,6 +89,7 @@ type
     procedure eAddressKeyPress(Sender: TObject; var Key: Char);
     procedure bPalMono256Click(Sender: TObject);
     procedure bNewClick(Sender: TObject);
+    procedure ePalAddressKeyPress(Sender: TObject; var Key: Char);
   private
     ROM: array of byte;
     NoChange: boolean;
@@ -107,16 +108,6 @@ implementation
 
 uses uCompress, uTiles;
 
-const
-  cPal16: tPal4bpp = (
-    $E0E0E0, $111111, $222222, $333333, $444444, $555555, $666666, $777777,
-    $888888, $999999, $AAAAAA, $BBBBBB, $CCCCCC, $DDDDDD, $EEEEEE, $FFFFFF);
-
-{  cPal256: tPalette = (
-    $000000, $010101, $020202, $030303, $040404, $050505, $060606, $070707, $080808, $090909, $0A0A0A, $0B0B0B, $0C0C0C, $0D0D0D, $0E0E0E, $0F0F0F,
-    $101010, $111111, $121212, $131313, $141414, $151515, $161616, $171717, $181818, $191919, $1A1A1A, $1B1B1B, $1C1C1C, $1D1D1D, $1E1E1E, $1F1F1F,
-    $202020, $212121, $222222, $232323, $242424, $252525, $262626, $272727, $080808, $090909, $0A0A0A, $0B0B0B, $0C0C0C, $0D0D0D, $0E0E0E, $0F0F0F,
-    $303030, $313131, $323232, $333333, $343434, $353535, $363636, $373737, $383838, $393939, $3A3A3A, $3B3B3B, $3C3C3C, $3D3D3D, $3E3E3E, $3F3F3F,}
 
 var
   Spr: pVisual;
@@ -125,22 +116,6 @@ var
   Pal: tPalette;
 
 
-{procedure MakeMonoPal16(var Pal: tPalette);
-  var i, r: integer;
-begin
-  for i:= 0 to 15 do begin
-    r := i shl 4 + i;
-    Pal[i] := R + R shl 8 + R shl 16;
-  end;
-end;
-
-procedure MakeMonoPal256(var Pal: tPalette);
-  var i: integer;
-begin
-  for i:= 0 to 255 do
-    Pal[i] := i + i shl 8 + i shl 16;
-end;
-}
 procedure MakeMonoPal(var Pal: tPalette; Num: integer);
   var i, r: integer;
 begin
@@ -179,7 +154,7 @@ procedure TfmMain.FormCreate(Sender: TObject);
 begin
 //  LoadROM('D:\Emulators\GBA\ROM\2564 - Final Fantasy V Advance (U)(Independent).gba');
 //  LoadROM('D:\Emulators\GBA\ROM\1805 - Final Fantasy I & II - Dawn of Souls (U)(Independent).gba');
-  LoadROM('s:\2564 - Final Fantasy V Advance (U)(Independent).gba');
+//  LoadROM('s:\2564 - Final Fantasy V Advance (U)(Independent).gba');
 end;
 
 
@@ -202,7 +177,6 @@ begin
   seWidth.Value  := Spr.W;
   seHeight.Value := Spr.H;
   seOffset.Value := Spr.Off;
-  seBPP.Value    := Spr.BPP;
   eName.Text     := Spr.Name;
   eSizeRaw.Text  := format(cFmt, [Spr.SizeRaw, Spr.SizeRaw]);
   eSizeCmp.Text  := format(cFmt, [Spr.SizeCmp, Spr.SizeCmp]);
@@ -224,7 +198,6 @@ begin
   Spr.W    := seWidth.Value;
   Spr.H    := seHeight.Value;
   Spr.Off  := seOffset.Value;
-  Spr.BPP  := seBPP.Value;
   Spr.Name := eName.Text;
   lbList.Items[lbList.ItemIndex] := Spr.Name;
 
@@ -246,6 +219,8 @@ begin
   v.PalNum := 16;
   MakeMonoPal(v.Pal, 16);
   lbList.AddItem(v.Name, tObject(v));
+  lbList.ItemIndex := lbList.Count -1;
+  lbListClick(Self);
 end;
 
 procedure TfmMain.seZoomChange(Sender: TObject);
@@ -399,5 +374,13 @@ begin
   lbList.Clear;
 end;
 
+
+procedure TfmMain.ePalAddressKeyPress(Sender: TObject; var Key: Char);
+begin
+  if Key = #13 then begin
+    Key := #0;
+    bLoadPalROMClick(nil);
+  end;
+end;
 
 end.

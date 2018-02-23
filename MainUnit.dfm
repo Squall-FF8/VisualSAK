@@ -320,56 +320,49 @@ object fmMain: TfmMain
     OnClick = bOpenROMClick
   end
   object Label1: TLabel
-    Left = 304
+    Left = 296
     Top = 16
     Width = 31
     Height = 13
     Caption = 'Width:'
   end
   object Label2: TLabel
-    Left = 352
+    Left = 344
     Top = 16
     Width = 34
     Height = 13
     Caption = 'Height:'
   end
   object Label3: TLabel
-    Left = 400
+    Left = 392
     Top = 16
     Width = 31
     Height = 13
     Caption = 'Offset:'
   end
-  object Label4: TLabel
-    Left = 448
-    Top = 16
-    Width = 24
-    Height = 13
-    Caption = 'BPP:'
-  end
   object Label5: TLabel
-    Left = 496
+    Left = 536
     Top = 16
     Width = 31
     Height = 13
     Caption = 'Name:'
   end
   object Label6: TLabel
-    Left = 648
+    Left = 672
     Top = 16
     Width = 46
     Height = 13
     Caption = 'Raw size:'
   end
   object Label7: TLabel
-    Left = 736
+    Left = 752
     Top = 16
     Width = 82
     Height = 13
     Caption = 'Compressed size:'
   end
   object Label8: TLabel
-    Left = 248
+    Left = 240
     Top = 16
     Width = 27
     Height = 13
@@ -466,7 +459,7 @@ object fmMain: TfmMain
     ButtonStyle = pbsFlat
     ParentShowHint = False
     ShowHint = True
-    OnDblClick = bLoadPalROMClick
+    OnClick = bLoadPalROMClick
   end
   object bNew: TPNGButton
     Left = 80
@@ -1018,7 +1011,7 @@ object fmMain: TfmMain
     ButtonStyle = pbsFlat
     ParentShowHint = False
     ShowHint = True
-    OnDblClick = bAddAddressClick
+    OnClick = bAddAddressClick
   end
   object bDelAddress: TPNGButton
     Left = 848
@@ -1087,7 +1080,14 @@ object fmMain: TfmMain
     ButtonStyle = pbsFlat
     ParentShowHint = False
     ShowHint = True
-    OnDblClick = bDelAddressClick
+    OnClick = bDelAddressClick
+  end
+  object Label12: TLabel
+    Left = 440
+    Top = 16
+    Width = 47
+    Height = 13
+    Caption = 'Template:'
   end
   object lbList: TListBox
     Left = 4
@@ -1100,7 +1100,7 @@ object fmMain: TfmMain
     OnClick = lbListClick
   end
   object seWidth: TSpinEdit
-    Left = 304
+    Left = 296
     Top = 32
     Width = 41
     Height = 22
@@ -1111,7 +1111,7 @@ object fmMain: TfmMain
     OnChange = ValueChange
   end
   object seHeight: TSpinEdit
-    Left = 352
+    Left = 344
     Top = 32
     Width = 41
     Height = 22
@@ -1122,7 +1122,7 @@ object fmMain: TfmMain
     OnChange = ValueChange
   end
   object seOffset: TSpinEdit
-    Left = 400
+    Left = 392
     Top = 32
     Width = 41
     Height = 22
@@ -1132,42 +1132,30 @@ object fmMain: TfmMain
     Value = 0
     OnChange = ValueChange
   end
-  object seBPP: TSpinEdit
-    Left = 448
-    Top = 32
-    Width = 41
-    Height = 22
-    Enabled = False
-    MaxValue = 8
-    MinValue = 1
-    TabOrder = 4
-    Value = 1
-    OnChange = ValueChange
-  end
   object eName: TEdit
-    Left = 496
+    Left = 536
     Top = 32
-    Width = 137
+    Width = 129
     Height = 21
     MaxLength = 20
-    TabOrder = 5
+    TabOrder = 4
     OnChange = ValueChange
   end
   object eSizeRaw: TEdit
-    Left = 648
+    Left = 672
     Top = 32
-    Width = 81
+    Width = 73
+    Height = 21
+    ReadOnly = True
+    TabOrder = 5
+  end
+  object eSizeCmp: TEdit
+    Left = 752
+    Top = 32
+    Width = 73
     Height = 21
     ReadOnly = True
     TabOrder = 6
-  end
-  object eSizeCmp: TEdit
-    Left = 736
-    Top = 32
-    Width = 81
-    Height = 21
-    ReadOnly = True
-    TabOrder = 7
   end
   object eAddress: TEdit
     Left = 696
@@ -1175,18 +1163,18 @@ object fmMain: TfmMain
     Width = 105
     Height = 21
     Anchors = [akTop, akRight]
-    TabOrder = 8
+    TabOrder = 7
     Text = '$1C7D04'
     OnKeyPress = eAddressKeyPress
   end
   object seZoom: TSpinEdit
-    Left = 248
+    Left = 240
     Top = 32
     Width = 41
     Height = 22
     MaxValue = 4
     MinValue = 1
-    TabOrder = 9
+    TabOrder = 8
     Value = 2
     OnChange = seZoomChange
   end
@@ -1208,7 +1196,7 @@ object fmMain: TfmMain
     GridLineWidth = 0
     Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine]
     ScrollBars = ssNone
-    TabOrder = 10
+    TabOrder = 9
     OnDrawCell = gPalDrawCell
     OnMouseUp = gPalMouseUp
   end
@@ -1218,7 +1206,8 @@ object fmMain: TfmMain
     Width = 105
     Height = 21
     Anchors = [akTop, akRight]
-    TabOrder = 11
+    TabOrder = 10
+    OnKeyPress = ePalAddressKeyPress
   end
   object sePalNum: TSpinEdit
     Left = 808
@@ -1228,8 +1217,23 @@ object fmMain: TfmMain
     Anchors = [akTop, akRight]
     MaxValue = 256
     MinValue = 1
-    TabOrder = 12
+    TabOrder = 11
     Value = 16
+  end
+  object ComboBox1: TComboBox
+    Left = 440
+    Top = 32
+    Width = 89
+    Height = 19
+    Font.Charset = RUSSIAN_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -11
+    Font.Name = 'MS Serif'
+    Font.Style = []
+    ItemHeight = 11
+    ParentFont = False
+    TabOrder = 12
+    Text = 'GBA 4bpp LZ10'
   end
   object OpenDialog: TOpenDialog
     Filter = 'SNES/GBA ROM|*.smc; *.gba|SNES ROM|*.smc|GBA ROM|*.gba|ALL|*.*'
