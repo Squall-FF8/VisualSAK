@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, Buttons, StdCtrls, Spin, Grids, pngextra;
+  Dialogs, Buttons, StdCtrls, Spin, Grids, pngextra, ExtCtrls;
 
 const
   cFmt = '%3d ($%.2x)';
@@ -25,52 +25,61 @@ type
     Off:     cardinal;
     Kind,
     BPP,
-    CmpType: byte;
+    Tmpl:    byte;
     Pal:     tPalette;
     PalAdr:  cardinal;
     PalNum:  cardinal;
   end;
   pVisual = ^tVisual;
 
+  tTemplate = record
+    Name: string[20];
+    BPP,
+    CmpType: byte;
+  end;
+  pTemplate = ^tTemplate;
+
 
 type
   TfmMain = class(TForm)
-    bOpenROM: TSpeedButton;
     OpenDialog: TOpenDialog;
     lbList: TListBox;
-    seWidth: TSpinEdit;
-    Label1: TLabel;
-    Label2: TLabel;
-    seHeight: TSpinEdit;
-    Label3: TLabel;
-    seOffset: TSpinEdit;
-    eName: TEdit;
-    Label5: TLabel;
-    eSizeRaw: TEdit;
-    Label6: TLabel;
-    Label7: TLabel;
-    eSizeCmp: TEdit;
-    eAddress: TEdit;
-    seZoom: TSpinEdit;
-    Label8: TLabel;
     SaveDialog: TSaveDialog;
-    gPal: TDrawGrid;
     ColorDialog: TColorDialog;
-    ePalAddress: TEdit;
-    sePalNum: TSpinEdit;
+    Panel1: TPanel;
+    gPal: TDrawGrid;
     Label9: TLabel;
+    ePalAddress: TEdit;
     Label10: TLabel;
-    Label11: TLabel;
-    bSave: TPNGButton;
-    bLoad: TPNGButton;
-    bNew: TPNGButton;
+    sePalNum: TSpinEdit;
     bLoadPalROM: TPNGButton;
-    bPalMono16: TPNGButton;
-    bPalMono256: TPNGButton;
+    Label11: TLabel;
+    eAddress: TEdit;
     bAddAddress: TPNGButton;
     bDelAddress: TPNGButton;
-    ComboBox1: TComboBox;
+    Panel2: TPanel;
+    bOpenROM: TSpeedButton;
+    Label1: TLabel;
+    Label2: TLabel;
+    Label3: TLabel;
+    Label5: TLabel;
+    Label8: TLabel;
+    bNew: TPNGButton;
+    bLoad: TPNGButton;
+    bSave: TPNGButton;
     Label12: TLabel;
+    seWidth: TSpinEdit;
+    seHeight: TSpinEdit;
+    seOffset: TSpinEdit;
+    eName: TEdit;
+    seZoom: TSpinEdit;
+    cbTemplate: TComboBox;
+    Label6: TLabel;
+    eSizeRaw: TEdit;
+    Label7: TLabel;
+    eSizeCmp: TEdit;
+    bPalMono16: TPNGButton;
+    bPalMono256: TPNGButton;
     procedure bOpenROMClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure lbListClick(Sender: TObject);
@@ -109,6 +118,19 @@ implementation
 uses uCompress, uTiles;
 
 
+const
+  // compression type constants
+  ctNone = 0;
+  ctLZ10 = 1;
+
+  cTmplNum = 2;
+  cTemplate: array[0 .. cTmplNum] of tTemplate = (
+    (Name: ''; BPP: 0; CmpType: ctNone),
+    (Name: 'GBA 4bpp LZ10'; BPP: 4; CmpType: ctLZ10),
+    (Name: 'GBA 4bpp NO'; BPP: 4; CmpType: ctNone)
+  );
+
+
 var
   Spr: pVisual;
   Buf: tLZStream;
@@ -120,7 +142,6 @@ procedure MakeMonoPal(var Pal: tPalette; Num: integer);
   var i, r: integer;
 begin
   for i:= 0 to Num - 1 do begin
-//    r := i * 256 div Num + i* 256 div (Num * Num);
     r := (i * 255) div (Num -1);
     Pal[i] := R + R shl 8 + R shl 16;
   end;
@@ -145,23 +166,44 @@ end;
 procedure TfmMain.bOpenROMClick(Sender: TObject);
 begin
   OpenDialog.Filter := 'SNES/GBA ROM|*.smc; *.gba|SNES ROM|*.smc|GBA ROM|*.gba|ALL|*.*';
-  if OpenDialog.Execute then
-    LoadROM(OpenDialog.FileName)
+  if OpenDialog.Execute then begin
+    LoadROM(OpenDialog.FileName);
+
+    bNew.Enabled := true;
+    bLoad.Enabled := true;
+    bSave.Enabled := true;
+
+    ePalAddress.Enabled := true;
+    bLoadPalROM.Enabled := true;
+
+    eAddress.Enabled    := true;
+    bAddAddress.Enabled := true;
+    bDelAddress.Enabled := true;
+  end;
 end;
 
 
 procedure TfmMain.FormCreate(Sender: TObject);
+  var i: integer;
 begin
 //  LoadROM('D:\Emulators\GBA\ROM\2564 - Final Fantasy V Advance (U)(Independent).gba');
 //  LoadROM('D:\Emulators\GBA\ROM\1805 - Final Fantasy I & II - Dawn of Souls (U)(Independent).gba');
 //  LoadROM('s:\2564 - Final Fantasy V Advance (U)(Independent).gba');
+  for i := 1 to cTmplNum do
+    cbTemplate.AddItem(cTemplate[i].Name, tObject(i));
+
 end;
 
 
 procedure TfmMain.UpdatePreview;
 begin
   fmMain.Repaint;
-  ConvertTileGBA(@buf[Spr.Off], @MobTiles, Spr.W * Spr.H);
+  if Spr.Tmpl = 0 then exit;
+
+  case cTemplate[Spr.Tmpl].CmpType of
+    ctNone: ConvertTileGBA(@ROM[Spr.Address+Spr.Off], @MobTiles, Spr.W * Spr.H);
+    ctLZ10: ConvertTileGBA(@buf[Spr.Off], @MobTiles, Spr.W * Spr.H);
+  end;
   DrawMobSpriteGBA(fmMain.Handle, 170, 60, Spr.W, Spr.H, seZoom.Value, true, @MobTiles, @Spr.Pal)
 end;
 
@@ -170,8 +212,13 @@ procedure TfmMain.lbListClick(Sender: TObject);
 begin
   if lbList.ItemIndex < 0 then exit;
   Spr := pointer(lbList.Items.Objects[lbList.ItemIndex]);
-  Spr.SizeRaw := pCardinal( @ROM[Spr.Address] )^ shr 8;
-  Spr.SizeCmp := DecodeLZ77InMem( @ROM[Spr.Address], Buf);
+
+  if cTemplate[Spr.Tmpl].CmpType = ctNone then
+    Spr.SizeRaw := (Spr.W * Spr.H * Spr.BPP) shl 3;
+  if cTemplate[Spr.Tmpl].CmpType = ctLZ10 then begin
+    Spr.SizeRaw := pCardinal( @ROM[Spr.Address] )^ shr 8;
+    Spr.SizeCmp := DecodeLZ77InMem( @ROM[Spr.Address], Buf);
+  end;
 
   NoChange := true;
   seWidth.Value  := Spr.W;
@@ -182,6 +229,7 @@ begin
   eSizeCmp.Text  := format(cFmt, [Spr.SizeCmp, Spr.SizeCmp]);
   eAddress.Text  := format('$%.6x',[Spr.Address]);
   ePalAddress.Text := format('$%.6x',[Spr.PalAdr]);
+  cbTemplate.ItemIndex := cbTemplate.Items.IndexOfObject(tObject(Spr.Tmpl));
   NoChange := false;
 
   UpdatePreview;
@@ -199,6 +247,8 @@ begin
   Spr.H    := seHeight.Value;
   Spr.Off  := seOffset.Value;
   Spr.Name := eName.Text;
+  Spr.Tmpl := Byte(cbTemplate.Items.Objects[cbTemplate.ItemIndex]);
+  Spr.BPP  := cTemplate[Spr.Tmpl].BPP;
   lbList.Items[lbList.ItemIndex] := Spr.Name;
 
   if Sender <> eName then UpdatePreview;
@@ -209,9 +259,9 @@ procedure TfmMain.bAddAddressClick(Sender: TObject);
   var v: pVisual;
 begin
   New(v);
+  FillChar(v^, Sizeof(v^), 0);
   v.Address := StrToInt(eAddress.Text);
   v.Name := eAddress.Text;
-  v.BPP  := 4;
   v.H    := 1;
   v.W    := 1;
   v.Off  := 8;

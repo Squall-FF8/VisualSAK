@@ -3,8 +3,8 @@ program VisualSAK;
 uses
   Forms,
   MainUnit in 'MainUnit.pas' {fmMain},
-  uCompress in '..\FFV_Viewer\uCompress.pas',
-  uTiles in '..\FFV_Viewer\uTiles.pas';
+  uCompress in 'uCompress.pas',
+  uTiles in 'uTiles.pas';
 
 {$R *.res}
 
