@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, Buttons, StdCtrls, Spin, Grids, pngextra, ExtCtrls;
+  Dialogs, Buttons, StdCtrls, Spin, Grids, pngextra, ExtCtrls, ComCtrls;
 
 const
   cFmt = '%3d ($%.2x)';
@@ -74,12 +74,9 @@ type
     eName: TEdit;
     seZoom: TSpinEdit;
     cbTemplate: TComboBox;
-    Label6: TLabel;
-    eSizeRaw: TEdit;
-    Label7: TLabel;
-    eSizeCmp: TEdit;
     bPalMono16: TPNGButton;
     bPalMono256: TPNGButton;
+    sBar: TStatusBar;
     procedure bOpenROMClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure lbListClick(Sender: TObject);
@@ -106,6 +103,8 @@ type
     procedure LoadROM(const FileName:string);
     procedure UpdatePreview;
     procedure EmptyList;
+    procedure EnableContols(State: boolean; Index: integer);
+    procedure CompressionChange;
   public
   end;
 
@@ -208,11 +207,9 @@ begin
 end;
 
 
-procedure TfmMain.lbListClick(Sender: TObject);
+procedure TfmMain.CompressionChange;
+  var n: integer;
 begin
-  if lbList.ItemIndex < 0 then exit;
-  Spr := pointer(lbList.Items.Objects[lbList.ItemIndex]);
-
   if cTemplate[Spr.Tmpl].CmpType = ctNone then
     Spr.SizeRaw := (Spr.W * Spr.H * Spr.BPP) shl 3;
   if cTemplate[Spr.Tmpl].CmpType = ctLZ10 then begin
@@ -220,16 +217,28 @@ begin
     Spr.SizeCmp := DecodeLZ77InMem( @ROM[Spr.Address], Buf);
   end;
 
+  n := Spr.SizeRaw div (Spr.BPP shl 3);
+  sBar.Panels[0].Text := format('#Tiles: '+cFmt, [n, n]);
+  sBar.Panels[1].Text := format('RawSize: '+cFmt, [Spr.SizeRaw, Spr.SizeRaw]);
+  sBar.Panels[2].Text := format('Compr.Size: '+cFmt, [Spr.SizeCmp, Spr.SizeCmp]);
+end;
+
+
+procedure TfmMain.lbListClick(Sender: TObject);
+begin
+  if lbList.ItemIndex < 0 then exit;
+  Spr := pointer(lbList.Items.Objects[lbList.ItemIndex]);
+  CompressionChange;
+
   NoChange := true;
   seWidth.Value  := Spr.W;
   seHeight.Value := Spr.H;
   seOffset.Value := Spr.Off;
   eName.Text     := Spr.Name;
-  eSizeRaw.Text  := format(cFmt, [Spr.SizeRaw, Spr.SizeRaw]);
-  eSizeCmp.Text  := format(cFmt, [Spr.SizeCmp, Spr.SizeCmp]);
   eAddress.Text  := format('$%.6x',[Spr.Address]);
   ePalAddress.Text := format('$%.6x',[Spr.PalAdr]);
-  cbTemplate.ItemIndex := cbTemplate.Items.IndexOfObject(tObject(Spr.Tmpl));
+  //cbTemplate.ItemIndex := cbTemplate.Items.IndexOfObject(tObject(Spr.Tmpl));
+  EnableContols(true, cbTemplate.Items.IndexOfObject(tObject(Spr.Tmpl)) );
   NoChange := false;
 
   UpdatePreview;
@@ -243,14 +252,19 @@ procedure TfmMain.ValueChange(Sender: TObject);
 begin
   if NoChange then exit;
 
-  Spr.W    := seWidth.Value;
-  Spr.H    := seHeight.Value;
-  Spr.Off  := seOffset.Value;
-  Spr.Name := eName.Text;
+  if Sender = cbTemplate then EnableContols(true, cbTemplate.ItemIndex)
+  else begin
+    Spr.W    := seWidth.Value;
+    Spr.H    := seHeight.Value;
+    Spr.Off  := seOffset.Value;
+    Spr.Name := eName.Text;
+    lbList.Items[lbList.ItemIndex] := Spr.Name;
+  end;
+
   Spr.Tmpl := Byte(cbTemplate.Items.Objects[cbTemplate.ItemIndex]);
   Spr.BPP  := cTemplate[Spr.Tmpl].BPP;
-  lbList.Items[lbList.ItemIndex] := Spr.Name;
 
+  if Sender = cbTemplate then CompressionChange;
   if Sender <> eName then UpdatePreview;
 end;
 
@@ -265,6 +279,7 @@ begin
   v.H    := 1;
   v.W    := 1;
   v.Off  := 8;
+  v.BPP  := 1;
 
   v.PalNum := 16;
   MakeMonoPal(v.Pal, 16);
@@ -432,5 +447,20 @@ begin
     bLoadPalROMClick(nil);
   end;
 end;
+
+
+procedure TfmMain.EnableContols(State: boolean; Index: integer);
+begin
+  NoChange := true;
+  cbTemplate.Enabled := State;
+  cbTemplate.ItemIndex := Index;
+
+  seZoom.Enabled    := Index >= 0;
+  seWidth.Enabled   := Index >= 0;
+  seHeight.Enabled  := Index >= 0;
+  seOffset.Enabled := Index >= 0;
+  NoChange := false;
+end;
+
 
 end.
