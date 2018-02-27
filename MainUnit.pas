@@ -35,7 +35,8 @@ type
   tTemplate = record
     Name: string[20];
     BPP,
-    CmpType: byte;
+    CmpType,
+    TileFmt  : byte;
   end;
   pTemplate = ^tTemplate;
 
@@ -74,9 +75,9 @@ type
     eName: TEdit;
     seZoom: TSpinEdit;
     cbTemplate: TComboBox;
+    sBar: TStatusBar;
     bPalMono16: TPNGButton;
     bPalMono256: TPNGButton;
-    sBar: TStatusBar;
     procedure bOpenROMClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure lbListClick(Sender: TObject);
@@ -122,11 +123,18 @@ const
   ctNone = 0;
   ctLZ10 = 1;
 
-  cTmplNum = 2;
+  // Tile Format constants
+  tfGBA4  = 1;
+  tfSNES3 = 2;
+  tfSNES4 = 3;
+
+  cTmplNum = 4;
   cTemplate: array[0 .. cTmplNum] of tTemplate = (
     (Name: ''; BPP: 0; CmpType: ctNone),
-    (Name: 'GBA 4bpp LZ10'; BPP: 4; CmpType: ctLZ10),
-    (Name: 'GBA 4bpp NO'; BPP: 4; CmpType: ctNone)
+    (Name: 'GBA 4bpp LZ10'; BPP: 4; CmpType: ctLZ10; TileFmt: tfGBA4),
+    (Name: 'GBA 4bpp NO';   BPP: 4; CmpType: ctNone; TileFmt: tfGBA4),
+    (Name: 'SNES 4bpp NO';  BPP: 4; CmpType: ctNone; TileFmt: tfSNES4),
+    (Name: 'SNES 3bpp NO';  BPP: 3; CmpType: ctNone; TileFmt: tfSNES3)
   );
 
 
@@ -199,9 +207,11 @@ begin
   fmMain.Repaint;
   if Spr.Tmpl = 0 then exit;
 
-  case cTemplate[Spr.Tmpl].CmpType of
-    ctNone: ConvertTileGBA(@ROM[Spr.Address+Spr.Off], @MobTiles, Spr.W * Spr.H);
-    ctLZ10: ConvertTileGBA(@buf[Spr.Off], @MobTiles, Spr.W * Spr.H);
+  case Spr.Tmpl of
+    1: ConvertTileGBA(@buf[Spr.Off], @MobTiles, Spr.W * Spr.H);
+    2: ConvertTileGBA(@ROM[Spr.Address+Spr.Off], @MobTiles, Spr.W * Spr.H);
+    3: ConvertTileSNES4Bpp(@ROM[Spr.Address+Spr.Off], @MobTiles, Spr.W * Spr.H);
+    4: ConvertTileSNES3Bpp(@ROM[Spr.Address+Spr.Off], @MobTiles, Spr.W * Spr.H);
   end;
   DrawMobSpriteGBA(fmMain.Handle, 170, 60, Spr.W, Spr.H, seZoom.Value, true, @MobTiles, @Spr.Pal)
 end;
@@ -250,7 +260,7 @@ end;
 
 procedure TfmMain.ValueChange(Sender: TObject);
 begin
-  if NoChange then exit;
+  if (NoChange) or (Spr = nil) then exit;
 
   if Sender = cbTemplate then EnableContols(true, cbTemplate.ItemIndex)
   else begin
@@ -276,9 +286,9 @@ begin
   FillChar(v^, Sizeof(v^), 0);
   v.Address := StrToInt(eAddress.Text);
   v.Name := eAddress.Text;
-  v.H    := 1;
-  v.W    := 1;
-  v.Off  := 8;
+  v.H    := seHeight.Value;
+  v.W    := seWidth.Value;
+  v.Off  := seOffset.Value;
   v.BPP  := 1;
 
   v.PalNum := 16;
@@ -399,6 +409,8 @@ procedure TfmMain.bLoadPalROMClick(Sender: TObject);
       p: pWord;
       R, G, B: byte;
 begin
+  if Spr = nil then exit;
+  ZeroMemory(@Pal[0], 256*4);
   Spr.PalAdr := StrToInt(ePalAddress.Text);
   p := @ROM[Spr.PalAdr];
   for i := 0 to sePalNum.Value -1 do begin
@@ -458,7 +470,7 @@ begin
   seZoom.Enabled    := Index >= 0;
   seWidth.Enabled   := Index >= 0;
   seHeight.Enabled  := Index >= 0;
-  seOffset.Enabled := Index >= 0;
+  seOffset.Enabled  := Index >= 0;
   NoChange := false;
 end;
 
