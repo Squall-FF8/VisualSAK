@@ -27,6 +27,8 @@ type
 
 procedure ConvertPal(Address: tPalSNES; Pal: pPal4bpp; Num: cardinal = 16);
 procedure ConvertTileGBA(Buffer: pByte; Tiles: pTileset; Num: cardinal);
+procedure ConvertTileSNES1Bpp(Buffer: pTileSnes; Tiles: pTileset; Num: cardinal);
+procedure ConvertTileSNES2Bpp(Buffer: pTileSnes; Tiles: pTileset; Num: cardinal);
 procedure ConvertTileSNES3Bpp(Buffer: pTileSnes; Tiles: pTileset; Num: cardinal);
 procedure ConvertTileSNES4Bpp(Buffer: pTileSnes; Tiles: pTileset; Num: cardinal);
 
@@ -146,6 +148,39 @@ begin
 
   SelectObject(dc, pen);
   DeleteObject(SelectObject(dc, brush));
+end;
+
+
+procedure ConvertTileSNES1Bpp(Buffer: pTileSnes; Tiles: pTileset; Num: cardinal);
+  var i, j, m, t: cardinal;
+      b0: byte;
+begin
+  m := 0;
+  for t := 0 to Num-1 do begin
+    for i := 0 to 7 do
+      for j := 0 to 7 do begin
+        b0 := ( Buffer[m + i] shr (7-j) ) and $01;
+        Tiles[t, i, j] := b0;
+      end;
+    inc(m, 8);
+  end
+end;
+
+
+procedure ConvertTileSNES2Bpp(Buffer: pTileSnes; Tiles: pTileset; Num: cardinal);
+  var i, j, m, t: cardinal;
+      b0, b1: byte;
+begin
+  m := 0;
+  for t := 0 to Num-1 do begin
+    for i := 0 to 7 do
+      for j := 0 to 7 do begin
+        b0 := ( Buffer[m + 2*i] shr (7-j) ) and $01;
+        b1 := ( Buffer[m + 2*i + 1] shr (7-j) ) and $01;
+        Tiles[t, i, j] := b0 + b1 shl 1;
+      end;
+    inc(m, 16);
+  end
 end;
 
 

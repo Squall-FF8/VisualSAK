@@ -127,14 +127,18 @@ const
   tfGBA4  = 1;
   tfSNES3 = 2;
   tfSNES4 = 3;
+  tfSNES2 = 4;
+  tf1bpp  = 5;
 
-  cTmplNum = 4;
+  cTmplNum = 6;
   cTemplate: array[0 .. cTmplNum] of tTemplate = (
     (Name: ''; BPP: 0; CmpType: ctNone),
     (Name: 'GBA 4bpp LZ10'; BPP: 4; CmpType: ctLZ10; TileFmt: tfGBA4),
     (Name: 'GBA 4bpp NO';   BPP: 4; CmpType: ctNone; TileFmt: tfGBA4),
     (Name: 'SNES 4bpp NO';  BPP: 4; CmpType: ctNone; TileFmt: tfSNES4),
-    (Name: 'SNES 3bpp NO';  BPP: 3; CmpType: ctNone; TileFmt: tfSNES3)
+    (Name: 'SNES 3bpp NO';  BPP: 3; CmpType: ctNone; TileFmt: tfSNES3),
+    (Name: 'SNES 2bpp NO';  BPP: 2; CmpType: ctNone; TileFmt: tfSNES2),
+    (Name: '1bpp NO';       BPP: 1; CmpType: ctNone; TileFmt: tf1bpp)
   );
 
 
@@ -152,6 +156,15 @@ begin
     r := (i * 255) div (Num -1);
     Pal[i] := R + R shl 8 + R shl 16;
   end;
+end;
+
+
+function Power2(N: cardinal): cardinal;
+  var i: integer;
+begin
+  Result := 1;
+  for i := 1 to n do
+    Result := Result shl 1;
 end;
 
 
@@ -212,6 +225,8 @@ begin
     2: ConvertTileGBA(@ROM[Spr.Address+Spr.Off], @MobTiles, Spr.W * Spr.H);
     3: ConvertTileSNES4Bpp(@ROM[Spr.Address+Spr.Off], @MobTiles, Spr.W * Spr.H);
     4: ConvertTileSNES3Bpp(@ROM[Spr.Address+Spr.Off], @MobTiles, Spr.W * Spr.H);
+    5: ConvertTileSNES2Bpp(@ROM[Spr.Address+Spr.Off], @MobTiles, Spr.W * Spr.H);
+    6: ConvertTileSNES1Bpp(@ROM[Spr.Address+Spr.Off], @MobTiles, Spr.W * Spr.H);
   end;
   DrawMobSpriteGBA(fmMain.Handle, 170, 60, Spr.W, Spr.H, seZoom.Value, true, @MobTiles, @Spr.Pal)
 end;
@@ -231,6 +246,10 @@ begin
   sBar.Panels[0].Text := format('#Tiles: '+cFmt, [n, n]);
   sBar.Panels[1].Text := format('RawSize: '+cFmt, [Spr.SizeRaw, Spr.SizeRaw]);
   sBar.Panels[2].Text := format('Compr.Size: '+cFmt, [Spr.SizeCmp, Spr.SizeCmp]);
+
+  FillChar(Pal, 256*4, 0);
+  Move(Spr.Pal, Pal, Spr.PalNum * 4);
+  gPal.Repaint;
 end;
 
 
@@ -247,14 +266,11 @@ begin
   eName.Text     := Spr.Name;
   eAddress.Text  := format('$%.6x',[Spr.Address]);
   ePalAddress.Text := format('$%.6x',[Spr.PalAdr]);
-  //cbTemplate.ItemIndex := cbTemplate.Items.IndexOfObject(tObject(Spr.Tmpl));
+  sePalNum.Value := Spr.PalNum;
   EnableContols(true, cbTemplate.Items.IndexOfObject(tObject(Spr.Tmpl)) );
   NoChange := false;
 
   UpdatePreview;
-
-  Move(Spr.Pal, Pal, Spr.PalNum * 4);
-  gPal.Repaint;
 end;
 
 
@@ -262,8 +278,14 @@ procedure TfmMain.ValueChange(Sender: TObject);
 begin
   if (NoChange) or (Spr = nil) then exit;
 
-  if Sender = cbTemplate then EnableContols(true, cbTemplate.ItemIndex)
-  else begin
+  if Sender = cbTemplate then begin
+    EnableContols(true, cbTemplate.ItemIndex);
+    Spr.Tmpl := Byte(cbTemplate.Items.Objects[cbTemplate.ItemIndex]);
+    Spr.BPP  := cTemplate[Spr.Tmpl].BPP;
+    Spr.PalNum := 1 shl Spr.BPP;
+    MakeMonoPal(Spr.Pal, Spr.PalNum);
+    CompressionChange;
+  end else begin
     Spr.W    := seWidth.Value;
     Spr.H    := seHeight.Value;
     Spr.Off  := seOffset.Value;
@@ -271,10 +293,6 @@ begin
     lbList.Items[lbList.ItemIndex] := Spr.Name;
   end;
 
-  Spr.Tmpl := Byte(cbTemplate.Items.Objects[cbTemplate.ItemIndex]);
-  Spr.BPP  := cTemplate[Spr.Tmpl].BPP;
-
-  if Sender = cbTemplate then CompressionChange;
   if Sender <> eName then UpdatePreview;
 end;
 
@@ -291,8 +309,8 @@ begin
   v.Off  := seOffset.Value;
   v.BPP  := 1;
 
-  v.PalNum := 16;
-  MakeMonoPal(v.Pal, 16);
+  //v.PalNum := 16;
+  //MakeMonoPal(v.Pal, 16);
   lbList.AddItem(v.Name, tObject(v));
   lbList.ItemIndex := lbList.Count -1;
   lbListClick(Self);
