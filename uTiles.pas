@@ -31,11 +31,13 @@ procedure ConvertTileSNES1Bpp(Buffer: pTileSnes; Tiles: pTileset; Num: cardinal)
 procedure ConvertTileSNES2Bpp(Buffer: pTileSnes; Tiles: pTileset; Num: cardinal);
 procedure ConvertTileSNES3Bpp(Buffer: pTileSnes; Tiles: pTileset; Num: cardinal);
 procedure ConvertTileSNES4Bpp(Buffer: pTileSnes; Tiles: pTileset; Num: cardinal);
+procedure ConvertTileSNES8Bpp(Buffer: pTileSnes; Tiles: pTileset; Num: cardinal);
 
 procedure DrawBackgroundGBA(Win: HWND; X, Y, Zoom: integer; Transparent: boolean; Tiles: pTileset; Pal: pPalBack; Map: tBackMap);
 procedure DrawBackgroundGBA2(DC: HDC; X, Y, Zoom: integer; Transparent: boolean; Tiles: pTileset; Pal: pPalBack; Map: tBackMap);
 
 procedure DrawMobSpriteGBA(Win: HWND; X,Y,W,H, Zoom: integer; Transparent: boolean; Sprite: pTileset; Pal: pPal4bpp);
+procedure DrawSprite(Win: HWND; X,Y,W,H, Zoom: integer; Transparent: boolean; Sprite: pTileset; Pal: pPal4bpp; tW, tH: integer);
 
 procedure DrawMobSprite   (Win: HWND; X,Y, Zoom: integer; Transparent: boolean; Sprite: pTileset; Pal: pPal4bpp; Map: pByte);
 procedure DrawMobSpriteBig(Win: HWND; X,Y, Zoom: integer; Transparent: boolean; Sprite: pTileset; Pal: pPal4bpp; Map: pWord);
@@ -221,6 +223,19 @@ begin
 end;
 
 
+procedure ConvertTileSNES8Bpp(Buffer: pTileSnes; Tiles: pTileset; Num: cardinal);
+  var i, j, m, t: cardinal;
+begin
+  m := 0;
+  for t := 0 to Num-1 do
+    for i := 0 to 7 do
+      for j := 0 to 7 do begin
+        Tiles[t, i, j] := Buffer[m];
+        inc(m);
+      end;
+end;
+
+
 procedure DrawMobSpriteGBA(Win: HWND; X,Y,W,H, Zoom: integer; Transparent: boolean; Sprite: pTileset; Pal: pPal4bpp);
   var i, j, Si, Sj, Tile, n, c: integer;
       dc: HDC;
@@ -247,6 +262,41 @@ begin
             DeleteObject( SelectObject(dc, CreateBrushIndirect(LogBrush) ) );
             Rectangle( dc, X + Zoom*(Sj*8 + j) , Y + Zoom*(Si*8 + i),
                            X + Zoom*(Sj*8 + j +1) +1, Y + Zoom*(Si*8 + i +1) +1 );
+          end;
+    end;
+
+  SelectObject(dc, pen);
+  DeleteObject(SelectObject(dc, brush));
+  ReleaseDC(Win, dc);
+end;
+
+
+procedure DrawSprite(Win: HWND; X,Y,W,H, Zoom: integer; Transparent: boolean; Sprite: pTileset; Pal: pPal4bpp; tW, tH: integer);
+  var i, j, Si, Sj, Tile, n, c: integer;
+      dc: HDC;
+      pen: HPEN;
+      brush: HBRUSH;
+      LogBrush:TLogBrush;
+begin
+  dc := GetDC(Win);
+  pen := SelectObject(dc, GetStockObject(NULL_PEN) );
+  LogBrush.lbStyle := BS_SOLID;
+  LogBrush.lbColor := $FFFFFF;
+  brush := SelectObject(dc, CreateBrushIndirect(LogBrush));
+
+  n := 0;
+  for Si := 0 to H-1 do
+    for Sj := 0 to W-1 do begin
+        Tile := n;
+        inc(n);
+        for i := 0 to tH-1 do
+          for j := 0 to tW-1 do begin
+            c := Sprite[Tile , i, j];
+            if Transparent and ( c = 0) then LogBrush.lbColor := TransColor
+              else LogBrush.lbColor := Pal[ c ];
+            DeleteObject( SelectObject(dc, CreateBrushIndirect(LogBrush) ) );
+            Rectangle( dc, X + Zoom*(Sj*tW + j) , Y + Zoom*(Si*tH + i),
+                           X + Zoom*(Sj*tW + j +1) +1, Y + Zoom*(Si*tH + i +1) +1 );
           end;
     end;
 

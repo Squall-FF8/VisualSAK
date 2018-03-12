@@ -76,8 +76,11 @@ type
     seZoom: TSpinEdit;
     cbTemplate: TComboBox;
     sBar: TStatusBar;
-    bPalMono16: TPNGButton;
-    bPalMono256: TPNGButton;
+    bPalMono: TPNGButton;
+    bPalMonoReverse: TPNGButton;
+    Memo1: TMemo;
+    Memo2: TMemo;
+    Button1: TButton;
     procedure bOpenROMClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure lbListClick(Sender: TObject);
@@ -89,14 +92,14 @@ type
     procedure bDelAddressClick(Sender: TObject);
     procedure gPalDrawCell(Sender: TObject; ACol, ARow: Integer;
       Rect: TRect; State: TGridDrawState);
-    procedure bPalMono16Click(Sender: TObject);
+    procedure bPalMonoClick(Sender: TObject);
     procedure gPalMouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure bLoadPalROMClick(Sender: TObject);
     procedure eAddressKeyPress(Sender: TObject; var Key: Char);
-    procedure bPalMono256Click(Sender: TObject);
     procedure bNewClick(Sender: TObject);
     procedure ePalAddressKeyPress(Sender: TObject; var Key: Char);
+    procedure Button1Click(Sender: TObject);
   private
     ROM: array of byte;
     NoChange: boolean;
@@ -129,8 +132,9 @@ const
   tfSNES4 = 3;
   tfSNES2 = 4;
   tf1bpp  = 5;
+  tf8bpp  = 6;
 
-  cTmplNum = 6;
+  cTmplNum = 8;
   cTemplate: array[0 .. cTmplNum] of tTemplate = (
     (Name: ''; BPP: 0; CmpType: ctNone),
     (Name: 'GBA 4bpp LZ10'; BPP: 4; CmpType: ctLZ10; TileFmt: tfGBA4),
@@ -138,7 +142,9 @@ const
     (Name: 'SNES 4bpp NO';  BPP: 4; CmpType: ctNone; TileFmt: tfSNES4),
     (Name: 'SNES 3bpp NO';  BPP: 3; CmpType: ctNone; TileFmt: tfSNES3),
     (Name: 'SNES 2bpp NO';  BPP: 2; CmpType: ctNone; TileFmt: tfSNES2),
-    (Name: '1bpp NO';       BPP: 1; CmpType: ctNone; TileFmt: tf1bpp)
+    (Name: '1bpp NO';       BPP: 1; CmpType: ctNone; TileFmt: tf1bpp),
+    (Name: '8bpp NO';       BPP: 8; CmpType: ctNone; TileFmt: tf8bpp),
+    (Name: '8bpp LZ10';     BPP: 8; CmpType: ctLZ10; TileFmt: tf8bpp)
   );
 
 
@@ -149,12 +155,13 @@ var
   Pal: tPalette;
 
 
-procedure MakeMonoPal(var Pal: tPalette; Num: integer);
+procedure MakeMonoPal(var Pal: tPalette; Num: integer; Reverse: boolean = false);
   var i, r: integer;
 begin
   for i:= 0 to Num - 1 do begin
     r := (i * 255) div (Num -1);
-    Pal[i] := R + R shl 8 + R shl 16;
+    if Reverse then Pal[Num -1 -i] := R + R shl 8 + R shl 16
+               else Pal[i] := R + R shl 8 + R shl 16;
   end;
 end;
 
@@ -227,8 +234,11 @@ begin
     4: ConvertTileSNES3Bpp(@ROM[Spr.Address+Spr.Off], @MobTiles, Spr.W * Spr.H);
     5: ConvertTileSNES2Bpp(@ROM[Spr.Address+Spr.Off], @MobTiles, Spr.W * Spr.H);
     6: ConvertTileSNES1Bpp(@ROM[Spr.Address+Spr.Off], @MobTiles, Spr.W * Spr.H);
+    7: ConvertTileSNES8Bpp(@ROM[Spr.Address+Spr.Off], @MobTiles, Spr.W * Spr.H);
+    8: ConvertTileSNES8Bpp(@buf[Spr.Off], @MobTiles, Spr.W * Spr.H);
   end;
-  DrawMobSpriteGBA(fmMain.Handle, 170, 60, Spr.W, Spr.H, seZoom.Value, true, @MobTiles, @Spr.Pal)
+  //DrawMobSpriteGBA(fmMain.Handle, 170, 60, Spr.W, Spr.H, seZoom.Value, true, @MobTiles, @Spr.Pal)
+  DrawSprite(fmMain.Handle, 170, 60, Spr.W, Spr.H, seZoom.Value, true, @MobTiles, @Spr.Pal, 8, 16)
 end;
 
 
@@ -380,29 +390,16 @@ begin
 end;
 
 
-procedure TfmMain.bPalMono16Click(Sender: TObject);
+procedure TfmMain.bPalMonoClick(Sender: TObject);
 begin
   ZeroMemory(@Pal[0], 256*4);
-  MakeMonoPal(Pal, 16);
+  MakeMonoPal(Pal, sePalNum.Value, Sender = bPalMonoReverse);
   gPal.Repaint;
 
   if Spr = nil then exit;
-  Spr.PalNum := 16;
-  MakeMonoPal(Spr.Pal, 16);
+  //Spr.PalNum := 16;
+  MakeMonoPal(Spr.Pal, Spr.PalNum, Sender = bPalMonoReverse);
   UpdatePreview;
-end;
-
-
-procedure TfmMain.bPalMono256Click(Sender: TObject);
-begin
-  MakeMonoPal(Pal, 256);
-  gPal.Repaint;
-
-  if Spr = nil then exit;
-  Spr.PalNum := 256;
-  MakeMonoPal(Spr.Pal, 256);
-  UpdatePreview;
-
 end;
 
 
@@ -492,5 +489,16 @@ begin
   NoChange := false;
 end;
 
+
+procedure TfmMain.Button1Click(Sender: TObject);
+  var LZ, LZ1: tLZStream;
+      n: cardinal;
+begin
+  StrToLZ(Memo1.Lines.Text, LZ);
+  SetLength(LZ1, 3000);
+  n := DecodeLZSS1(LZ, LZ1);
+  Memo2.Lines.Text := LZToStr(LZ1);
+  Memo2.Lines.Insert(0, IntToStr(n));
+end;
 
 end.

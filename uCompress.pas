@@ -10,6 +10,7 @@ procedure StrToLZ(const Str: string; var LZ: tLZStream);
 function  LZToStr(LZ: tLZStream): string;
 
 procedure DecodeLZSS(const Src: tLZStream; var Dst: tLZStream; Header: boolean);
+function  DecodeLZSS1(const Src: tLZStream; var Dst: tLZStream): cardinal;
 
 procedure DecodeLZ77(const Src: tLZStream; var Dst: tLZStream);
 
@@ -267,6 +268,53 @@ begin
 
   Result := pak
 end;
+
+
+function DecodeLZSS1(const Src: tLZStream; var Dst: tLZStream): cardinal;
+  var i, j, m: integer;
+      Buffer: array[0..$7FF] of byte;
+      BufPos, SrcPos, DstPos: integer;
+      Map: byte;
+      o, l: integer;
+begin
+  SrcPos := 0;
+  m := Src[SrcPos] + Src[SrcPos+1] shl 8;
+  inc(SrcPos, 2);
+
+  // Decompress init
+  FillChar(Buffer, $800, 0);
+  BufPos := $07DE;
+  DstPos := 0;
+
+  while SrcPos < m do begin
+    Map := Src[SrcPos]; inc(SrcPos);
+    for i := 1 to 8 do begin
+      if (Map and $01) > 0 then begin
+        Dst[DstPos] := Src[SrcPos]; inc(DstPos);
+        Buffer[BufPos] := Src[SrcPos]; inc(BufPos);
+        if BufPos = $800 then
+          BufPos := 0;
+        inc(SrcPos);
+      end else begin
+        o := Src[SrcPos] + (Src[SrcPos + 1] and $07) shl 8;
+        l := Src[SrcPos + 1] shr 3 + 3;
+        for j := 1 to l do begin
+          Dst[DstPos] := Buffer[o]; inc(DstPos);
+          Buffer[BufPos] := Buffer[o]; inc(BufPos);
+          if BufPos = $800 then
+            BufPos := 0;
+          inc(o); if o = $800 then o := 0;
+        end;
+        inc(SrcPos, 2);
+      end;
+      if SrcPos >=m then break;
+      Map := Map shr 1;
+    end;
+  end;
+
+  Result := DstPos;
+end;
+
 
 
 end.
