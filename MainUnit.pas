@@ -81,6 +81,7 @@ type
     Memo1: TMemo;
     Memo2: TMemo;
     Button1: TButton;
+    Button2: TButton;
     procedure bOpenROMClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure lbListClick(Sender: TObject);
@@ -100,6 +101,7 @@ type
     procedure bNewClick(Sender: TObject);
     procedure ePalAddressKeyPress(Sender: TObject; var Key: Char);
     procedure Button1Click(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
   private
     ROM: array of byte;
     NoChange: boolean;
@@ -192,7 +194,7 @@ end;
 
 procedure TfmMain.bOpenROMClick(Sender: TObject);
 begin
-  OpenDialog.Filter := 'SNES/GBA ROM|*.smc; *.gba|SNES ROM|*.smc|GBA ROM|*.gba|ALL|*.*';
+  OpenDialog.Filter := 'SNES/GBA ROM|*.smc; *.sfc; *.gba|SNES ROM|*.smc; *.sfc|GBA ROM|*.gba|ALL|*.*';
   if OpenDialog.Execute then begin
     LoadROM(OpenDialog.FileName);
 
@@ -237,8 +239,8 @@ begin
     7: ConvertTileSNES8Bpp(@ROM[Spr.Address+Spr.Off], @MobTiles, Spr.W * Spr.H);
     8: ConvertTileSNES8Bpp(@buf[Spr.Off], @MobTiles, Spr.W * Spr.H);
   end;
-  //DrawMobSpriteGBA(fmMain.Handle, 170, 60, Spr.W, Spr.H, seZoom.Value, true, @MobTiles, @Spr.Pal)
-  DrawSprite(fmMain.Handle, 170, 60, Spr.W, Spr.H, seZoom.Value, true, @MobTiles, @Spr.Pal, 8, 16)
+  DrawMobSpriteGBA(fmMain.Handle, 170, 60, Spr.W, Spr.H, seZoom.Value, true, @MobTiles, @Spr.Pal)
+  //DrawSprite(fmMain.Handle, 170, 60, Spr.W, Spr.H, seZoom.Value, true, @MobTiles, @Spr.Pal, 8, 16)
 end;
 
 
@@ -499,6 +501,66 @@ begin
   n := DecodeLZSS1(LZ, LZ1);
   Memo2.Lines.Text := LZToStr(LZ1);
   Memo2.Lines.Insert(0, IntToStr(n));
+end;
+
+
+procedure TfmMain.Button2Click(Sender: TObject);
+  type
+    TLogPal = record
+      lpal : TLogPalette;
+      colorSpace : Array[0..255] of TPaletteEntry;
+    end;
+  var i, j, tx, ty : integer;
+      Pal: TLogPal;
+      bmp: TBitmap;
+      Src, Dst: pByte;
+      p: PByteArray;
+begin
+  Pal.lpal.palVersion := $300;
+  Pal.lpal.palNumEntries := 256;
+  for i := 0 to 255 do
+    with Pal.lpal.palPalEntry[i] do begin
+      peRed   := Spr.Pal[i] and $0000FF;
+      peGreen := (Spr.Pal[i] shr 8)  and $0000FF;
+      peBlue  := (Spr.Pal[i] shr 16) and $0000FF;
+    end;
+
+  bmp := TBitmap.Create;
+  bmp.PixelFormat := pf8bit;
+  bmp.Width  := Spr.W shl 3;
+  bmp.Height := -Spr.H shl 3;
+  bmp.Palette := CreatePalette(Pal.lpal);
+  if bmp.HandleType = bmDDB	then
+    ShowMessage('Not DIB');
+
+  Src := @buf[Spr.Off];
+  Dst := bmp.ScanLine[0];
+  for i := 0 to Spr.H -1 do
+    for j := 0 to Spr.W -1 do
+      for ty := 0 to 7 do begin
+        p := bmp.ScanLine[i*8 + ty];
+        p[j*8]     := Src^ and $0F;
+        p[j*8 + 1] := Src^ shr 4;
+        inc(Src);
+        p[j*8 + 2] := Src^ and $0F;
+        p[j*8 + 3] := Src^ shr 4;
+        inc(Src);
+        p[j*8 + 4] := Src^ and $0F;
+        p[j*8 + 5] := Src^ shr 4;
+        inc(Src);
+        p[j*8 + 6] := Src^ and $0F;
+        p[j*8 + 7] := Src^ shr 4;
+        inc(Src);
+      end;
+
+  //Canvas.Draw(170, 60, bmp);
+  bmp.Transparent := true;
+  bmp.TransparentMode := tmAuto;
+  //bmp.TransparentMode := tmFixed;
+  //bmp.TransparentColor := { $01000001;}TColor($01000000 + Integer(Pal.colorSpace[0]));
+  Canvas.Draw(170, 60, bmp);
+  //Canvas.StretchDraw(Bounds(170, 60, bmp.Width*3, bmp.Height*3), bmp);
+  bmp.Free
 end;
 
 end.
