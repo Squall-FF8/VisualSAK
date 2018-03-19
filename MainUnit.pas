@@ -102,6 +102,7 @@ type
     procedure ePalAddressKeyPress(Sender: TObject; var Key: Char);
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
   private
     ROM: array of byte;
     NoChange: boolean;
@@ -120,7 +121,7 @@ var
 implementation
 {$R *.dfm}
 
-uses uCompress, uTiles;
+uses uCommon, uCompress, uTiles;
 
 
 const
@@ -221,7 +222,19 @@ begin
   for i := 1 to cTmplNum do
     cbTemplate.AddItem(cTemplate[i].Name, tObject(i));
 
+  GetMem( PalBMP, Sizeof( TLogPalette ) + Sizeof( TPaletteEntry ) * 255 );
+  PalBMP.palVersion := $300;
+  PalBMP.palNumEntries := 256;
+  hPalBMP := CreatePalette(PalBMP^);
 end;
+
+
+procedure TfmMain.FormDestroy(Sender: TObject);
+begin
+  DeleteObject(hPalBMP);
+  FreeMem(PalBMP);
+end;
+
 
 
 procedure TfmMain.UpdatePreview;
@@ -510,30 +523,41 @@ procedure TfmMain.Button2Click(Sender: TObject);
       lpal : TLogPalette;
       colorSpace : Array[0..255] of TPaletteEntry;
     end;
-  var i, j, tx, ty : integer;
-      Pal: TLogPal;
+  var i, j, tx, ty, w, h : integer;
+      //Pal: TLogPal;
       bmp: TBitmap;
       Src, Dst: pByte;
       p: PByteArray;
+      Bitmap, Mask: TBitmap;
+      tmp: array[0..255] of cardinal;
 begin
-  Pal.lpal.palVersion := $300;
-  Pal.lpal.palNumEntries := 256;
-  for i := 0 to 255 do
-    with Pal.lpal.palPalEntry[i] do begin
+{  for i := 0 to 255 do
+    with PalBMP.palPalEntry[i] do begin
       peRed   := Spr.Pal[i] and $0000FF;
       peGreen := (Spr.Pal[i] shr 8)  and $0000FF;
       peBlue  := (Spr.Pal[i] shr 16) and $0000FF;
+      peFlags := PC_RESERVED;
     end;
+  hPalBMP := CreatePalette(PalBMP^); }
+  //Pal.lpal.palPalEntry[0].peRed   := $E0;
+  //Pal.lpal.palPalEntry[0].peGreen := $E0;
+  //Pal.lpal.palPalEntry[0].peBlue  := $E0;
+  //Cardinal(Pal.lpal.palPalEntry[0]) := $01000000 + TransColor;{ $01E0E0E0;}
 
   bmp := TBitmap.Create;
   bmp.PixelFormat := pf8bit;
   bmp.Width  := Spr.W shl 3;
   bmp.Height := -Spr.H shl 3;
-  bmp.Palette := CreatePalette(Pal.lpal);
+  //bmp.Palette := CreatePalette(Pal.lpal);
+  bmp.Palette := hPalBMP;
+  Move(Spr.Pal[0], tmp[0], 256 *4);
+  ByteSwapColors(tmp[0], 256);
+  SetDIBColorTable(bmp.Canvas.Handle, 0, 256, tmp[0]);
   if bmp.HandleType = bmDDB	then
     ShowMessage('Not DIB');
 
-  Src := @buf[Spr.Off];
+  if Spr.Tmpl in [1,8] then Src := @buf[Spr.Off]
+                       else Src := @ROM[Spr.Address+Spr.Off];
   Dst := bmp.ScanLine[0];
   for i := 0 to Spr.H -1 do
     for j := 0 to Spr.W -1 do
@@ -554,12 +578,49 @@ begin
       end;
 
   //Canvas.Draw(170, 60, bmp);
-  bmp.Transparent := true;
-  bmp.TransparentMode := tmAuto;
+  //bmp.Transparent := true;
+  //bmp.TransparentMode := tmAuto;
   //bmp.TransparentMode := tmFixed;
-  //bmp.TransparentColor := { $01000001;}TColor($01000000 + Integer(Pal.colorSpace[0]));
-  Canvas.Draw(170, 60, bmp);
-  //Canvas.StretchDraw(Bounds(170, 60, bmp.Width*3, bmp.Height*3), bmp);
+  //bmp.TransparentColor :=  $01000000;  {TColor($01000000 + Integer(Pal.colorSpace[0]));}
+  Canvas.Draw(470, 60, bmp);
+
+{  //bmp.ReleasePalette;
+  for i := 0 to 4 do begin
+    Pal.lpal.palPalEntry[i].peRed   := $FF;
+    Pal.lpal.palPalEntry[i].peGreen := $00;
+    Pal.lpal.palPalEntry[i].peBlue  := $00;
+    Pal.lpal.palPalEntry[i].peFlags := $01;
+  end;
+  tx := SetPaletteEntries(bmp.Palette, 0, 5, Pal.lpal.palPalEntry[0]);
+  if tx = 0 then
+    ShowMessage('SetPaletteEntries failed');
+  //Canvas.Draw(270, 60, bmp);
+  //bmp.Palette := CreatePalette(Pal.lpal);                           }
+
+  Bitmap := TBitmap.Create;
+  Mask := TBitmap.Create;
+  try
+    Bitmap.Assign(bmp);
+    Mask.Assign(bmp);
+    Mask.Mask($01000000);
+    w := bmp.Width;
+    h := bmp.Height;
+    {if $01000000 <> clBlack then begin
+      BitBlt(Mask.Canvas.Handle, 0, 0, Mask.Width, Mask.Height, 0, 0, 0, DSTINVERT);
+      BitBlt(Bitmap.Canvas.Handle, 0, 0, Bitmap.Width, Bitmap.Height, Mask.Canvas.Handle, 0, 0, SRCAND);
+      BitBlt(Mask.Canvas.Handle, 0, 0, Mask.Width, Mask.Height, 0, 0, 0, DSTINVERT);
+    end; }
+    StretchBlt(Canvas.Handle, 300, 60, 3*w, 3*h, Mask.Canvas.Handle, 0, 0, w, h, SRCAND);
+    StretchBlt(Canvas.Handle, 300, 60, 3*w, 3*h, Bitmap.Canvas.Handle, 0, 0, w, h, SRCPAINT);
+    //BitBlt(Canvas.Handle, 270, 60, w, h, Mask.Canvas.Handle, 0, 0, SRCAND);
+    //BitBlt(bmp.Canvas.Handle, 0, 0, w, h, Bitmap.Canvas.Handle, 0, 0, SRCPAINT);
+    //Canvas.Draw(270, 60, bmp);
+  finally
+    Bitmap.Free;
+    Mask.Free;
+  end;
+
+  Canvas.StretchDraw(Bounds(170, 60, bmp.Width*3, bmp.Height*3), bmp);
   bmp.Free
 end;
 

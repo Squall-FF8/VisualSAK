@@ -4,7 +4,8 @@ uses
   Forms,
   MainUnit in 'MainUnit.pas' {fmMain},
   uCompress in 'uCompress.pas',
-  uTiles in 'uTiles.pas';
+  uTiles in 'uTiles.pas',
+  uCommon in 'uCommon.pas';
 
 {$R *.res}
 
