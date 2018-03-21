@@ -106,12 +106,14 @@ type
   private
     ROM: array of byte;
     NoChange: boolean;
+    RomName, DocName: string;
 
     procedure LoadROM(const FileName:string);
     procedure UpdatePreview;
     procedure EmptyList;
     procedure EnableContols(State: boolean; Index: integer);
     procedure CompressionChange;
+    procedure SetCaption;
   public
   end;
 
@@ -183,7 +185,8 @@ end;
 procedure TfmMain.LoadROM(const FileName:string);
   var f, n: cardinal;
 begin
-  Caption := FileName;
+  RomName := FileName;
+  SetCaption;
   f := CreateFile(pchar(FileName), GENERIC_READ, FILE_SHARE_READ, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
   if f = INVALID_HANDLE_VALUE then raise Exception.Create(format('%s not found', [Caption]));
   n := GetFileSize(f, nil);
@@ -235,6 +238,12 @@ begin
   FreeMem(PalBMP);
 end;
 
+
+
+procedure TfmMain.SetCaption;
+begin
+  Caption := format('Visual SAK:> %s  <:>  %s', [DocName, RomName]);
+end;
 
 
 procedure TfmMain.UpdatePreview;
@@ -368,6 +377,8 @@ procedure TfmMain.bLoadClick(Sender: TObject);
 begin
   OpenDialog.Filter := 'Visual SAK (*.vsk)|*.vsk|ALL (*.*)|*.*';
   if not OpenDialog.Execute then exit;
+  DocName := OpenDialog.FileName;
+  SetCaption;
 
   AssignFile(f, OpenDialog.FileName);
   Reset(f);
