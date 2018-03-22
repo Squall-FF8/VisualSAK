@@ -18,6 +18,12 @@ object fmMain: TfmMain
   OnDestroy = FormDestroy
   PixelsPerInch = 96
   TextHeight = 13
+  object Image: TImage
+    Left = 312
+    Top = 96
+    Width = 353
+    Height = 337
+  end
   object lbList: TListBox
     Left = 0
     Top = 57
@@ -780,7 +786,7 @@ object fmMain: TfmMain
       Caption = 'Offset:'
     end
     object Label5: TLabel
-      Left = 560
+      Left = 648
       Top = 16
       Width = 31
       Height = 13
@@ -1164,6 +1170,13 @@ object fmMain: TfmMain
       Height = 13
       Caption = 'Template:'
     end
+    object Label4: TLabel
+      Left = 560
+      Top = 16
+      Width = 63
+      Height = 13
+      Caption = 'Compression:'
+    end
     object seWidth: TSpinEdit
       Left = 296
       Top = 32
@@ -1201,7 +1214,7 @@ object fmMain: TfmMain
       OnChange = ValueChange
     end
     object eName: TEdit
-      Left = 560
+      Left = 648
       Top = 32
       Width = 129
       Height = 21
@@ -1236,6 +1249,23 @@ object fmMain: TfmMain
       ItemHeight = 11
       ParentFont = False
       TabOrder = 5
+      OnChange = ValueChange
+    end
+    object cbCompression: TComboBox
+      Left = 560
+      Top = 32
+      Width = 81
+      Height = 19
+      Style = csDropDownList
+      Enabled = False
+      Font.Charset = RUSSIAN_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -11
+      Font.Name = 'MS Serif'
+      Font.Style = []
+      ItemHeight = 11
+      ParentFont = False
+      TabOrder = 6
       OnChange = ValueChange
     end
   end

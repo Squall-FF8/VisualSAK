@@ -6,40 +6,6 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, Buttons, StdCtrls, Spin, Grids, pngextra, ExtCtrls, ComCtrls;
 
-const
-  cFmt = '%3d ($%.2x)';
-
-
-
-type
-  tPalEntry = cardinal;
-  tPalette = array[0..255] of tPalEntry;
-  pPalette = ^tPalette;
-
-  tVisual = record
-    Name:    string[20];
-    Address: cardinal;
-    SizeRaw,
-    SizeCmp: cardinal;
-    W, H,
-    Off:     cardinal;
-    Kind,
-    BPP,
-    Tmpl:    byte;
-    Pal:     tPalette;
-    PalAdr:  cardinal;
-    PalNum:  cardinal;
-  end;
-  pVisual = ^tVisual;
-
-  tTemplate = record
-    Name: string[20];
-    BPP,
-    CmpType,
-    TileFmt  : byte;
-  end;
-  pTemplate = ^tTemplate;
-
 
 type
   TfmMain = class(TForm)
@@ -82,6 +48,9 @@ type
     Memo2: TMemo;
     Button1: TButton;
     Button2: TButton;
+    Label4: TLabel;
+    cbCompression: TComboBox;
+    Image: TImage;
     procedure bOpenROMClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure lbListClick(Sender: TObject);
@@ -126,36 +95,8 @@ implementation
 uses uCommon, uCompress, uTiles;
 
 
-const
-  // compression type constants
-  ctNone = 0;
-  ctLZ10 = 1;
-
-  // Tile Format constants
-  tfGBA4  = 1;
-  tfSNES3 = 2;
-  tfSNES4 = 3;
-  tfSNES2 = 4;
-  tf1bpp  = 5;
-  tf8bpp  = 6;
-
-  cTmplNum = 8;
-  cTemplate: array[0 .. cTmplNum] of tTemplate = (
-    (Name: ''; BPP: 0; CmpType: ctNone),
-    (Name: 'GBA 4bpp LZ10'; BPP: 4; CmpType: ctLZ10; TileFmt: tfGBA4),
-    (Name: 'GBA 4bpp NO';   BPP: 4; CmpType: ctNone; TileFmt: tfGBA4),
-    (Name: 'SNES 4bpp NO';  BPP: 4; CmpType: ctNone; TileFmt: tfSNES4),
-    (Name: 'SNES 3bpp NO';  BPP: 3; CmpType: ctNone; TileFmt: tfSNES3),
-    (Name: 'SNES 2bpp NO';  BPP: 2; CmpType: ctNone; TileFmt: tfSNES2),
-    (Name: '1bpp NO';       BPP: 1; CmpType: ctNone; TileFmt: tf1bpp),
-    (Name: '8bpp NO';       BPP: 8; CmpType: ctNone; TileFmt: tf8bpp),
-    (Name: '8bpp LZ10';     BPP: 8; CmpType: ctLZ10; TileFmt: tf8bpp)
-  );
-
-
 var
   Spr: pVisual;
-  Buf: tLZStream;
   MobTiles: array[0..1000, 0..7, 0..7] of byte;
   Pal: tPalette;
 
@@ -193,26 +134,26 @@ begin
   SetLength(ROM, n);
   ReadFile(f, ROM[0], n, n, nil);
   CloseHandle(f);
+
+  // Enable controls
+  bNew.Enabled := true;
+  bLoad.Enabled := true;
+  bSave.Enabled := true;
+
+  ePalAddress.Enabled := true;
+  bLoadPalROM.Enabled := true;
+
+  eAddress.Enabled    := true;
+  bAddAddress.Enabled := true;
+  bDelAddress.Enabled := true;
 end;
 
 
 procedure TfmMain.bOpenROMClick(Sender: TObject);
 begin
   OpenDialog.Filter := 'SNES/GBA ROM|*.smc; *.sfc; *.gba|SNES ROM|*.smc; *.sfc|GBA ROM|*.gba|ALL|*.*';
-  if OpenDialog.Execute then begin
+  if OpenDialog.Execute then
     LoadROM(OpenDialog.FileName);
-
-    bNew.Enabled := true;
-    bLoad.Enabled := true;
-    bSave.Enabled := true;
-
-    ePalAddress.Enabled := true;
-    bLoadPalROM.Enabled := true;
-
-    eAddress.Enabled    := true;
-    bAddAddress.Enabled := true;
-    bDelAddress.Enabled := true;
-  end;
 end;
 
 
@@ -221,14 +162,19 @@ procedure TfmMain.FormCreate(Sender: TObject);
 begin
 //  LoadROM('D:\Emulators\GBA\ROM\2564 - Final Fantasy V Advance (U)(Independent).gba');
 //  LoadROM('D:\Emulators\GBA\ROM\1805 - Final Fantasy I & II - Dawn of Souls (U)(Independent).gba');
-//  LoadROM('s:\2564 - Final Fantasy V Advance (U)(Independent).gba');
   for i := 1 to cTmplNum do
     cbTemplate.AddItem(cTemplate[i].Name, tObject(i));
+
+  for i := 0 to cCmpNum do
+    cbCompression.Items.Add(cCompression[i].Name);
 
   GetMem( PalBMP, Sizeof( TLogPalette ) + Sizeof( TPaletteEntry ) * 255 );
   PalBMP.palVersion := $300;
   PalBMP.palNumEntries := 256;
   hPalBMP := CreatePalette(PalBMP^);
+
+  SetLength(Buf, 1024*1024);
+  LoadROM('S:\Test\FFV\work\2564 - Final Fantasy V Advance (U)(Independent).gba');
 end;
 
 
@@ -236,6 +182,8 @@ procedure TfmMain.FormDestroy(Sender: TObject);
 begin
   DeleteObject(hPalBMP);
   FreeMem(PalBMP);
+
+  SetLength(Buf, 0);
 end;
 
 
@@ -269,11 +217,11 @@ end;
 procedure TfmMain.CompressionChange;
   var n: integer;
 begin
-  if cTemplate[Spr.Tmpl].CmpType = ctNone then
+  if Spr.Cmp = ctNone then
     Spr.SizeRaw := (Spr.W * Spr.H * Spr.BPP) shl 3;
-  if cTemplate[Spr.Tmpl].CmpType = ctLZ10 then begin
+  if Spr.Cmp = ctLZ77_10 then begin
     Spr.SizeRaw := pCardinal( @ROM[Spr.Address] )^ shr 8;
-    Spr.SizeCmp := DecodeLZ77InMem( @ROM[Spr.Address], Buf);
+    Spr.SizeCmp := DecodeLZ77InMem( @ROM[Spr.Address], tLZStream(Buf));
   end;
 
   n := Spr.SizeRaw div (Spr.BPP shl 3);
@@ -291,7 +239,6 @@ procedure TfmMain.lbListClick(Sender: TObject);
 begin
   if lbList.ItemIndex < 0 then exit;
   Spr := pointer(lbList.Items.Objects[lbList.ItemIndex]);
-  CompressionChange;
 
   NoChange := true;
   seWidth.Value  := Spr.W;
@@ -302,6 +249,8 @@ begin
   ePalAddress.Text := format('$%.6x',[Spr.PalAdr]);
   sePalNum.Value := Spr.PalNum;
   EnableContols(true, cbTemplate.Items.IndexOfObject(tObject(Spr.Tmpl)) );
+  cbCompression.ItemIndex := Spr.Cmp;
+  CompressionChange;
   NoChange := false;
 
   UpdatePreview;
@@ -318,13 +267,14 @@ begin
     Spr.BPP  := cTemplate[Spr.Tmpl].BPP;
     Spr.PalNum := 1 shl Spr.BPP;
     MakeMonoPal(Spr.Pal, Spr.PalNum);
-    CompressionChange;
   end else begin
     Spr.W    := seWidth.Value;
     Spr.H    := seHeight.Value;
     Spr.Off  := seOffset.Value;
     Spr.Name := eName.Text;
     lbList.Items[lbList.ItemIndex] := Spr.Name;
+    Spr.Cmp := cbCompression.ItemIndex;
+    CompressionChange;
   end;
 
   if Sender <> eName then UpdatePreview;
@@ -342,6 +292,8 @@ begin
   v.W    := seWidth.Value;
   v.Off  := seOffset.Value;
   v.BPP  := 1;
+  v.tW   := 8;
+  v.tH   := 8;
 
   //v.PalNum := 16;
   //MakeMonoPal(v.Pal, 16);
@@ -507,6 +459,7 @@ begin
   NoChange := true;
   cbTemplate.Enabled := State;
   cbTemplate.ItemIndex := Index;
+  cbCompression.Enabled := State;
 
   seZoom.Enabled    := Index >= 0;
   seWidth.Enabled   := Index >= 0;
@@ -567,8 +520,8 @@ begin
   if bmp.HandleType = bmDDB	then
     ShowMessage('Not DIB');
 
-  if Spr.Tmpl in [1,8] then Src := @buf[Spr.Off]
-                       else Src := @ROM[Spr.Address+Spr.Off];
+  if Spr.Cmp > 0 then Src := @buf[Spr.Off]
+                 else Src := @ROM[Spr.Address+Spr.Off];
   Dst := bmp.ScanLine[0];
   for i := 0 to Spr.H -1 do
     for j := 0 to Spr.W -1 do
@@ -621,8 +574,8 @@ begin
       BitBlt(Bitmap.Canvas.Handle, 0, 0, Bitmap.Width, Bitmap.Height, Mask.Canvas.Handle, 0, 0, SRCAND);
       BitBlt(Mask.Canvas.Handle, 0, 0, Mask.Width, Mask.Height, 0, 0, 0, DSTINVERT);
     end; }
-    StretchBlt(Canvas.Handle, 300, 60, 3*w, 3*h, Mask.Canvas.Handle, 0, 0, w, h, SRCAND);
-    StretchBlt(Canvas.Handle, 300, 60, 3*w, 3*h, Bitmap.Canvas.Handle, 0, 0, w, h, SRCPAINT);
+    //StretchBlt(Canvas.Handle, 300, 60, 3*w, 3*h, Mask.Canvas.Handle, 0, 0, w, h, SRCAND);
+    //StretchBlt(Canvas.Handle, 300, 60, 3*w, 3*h, Bitmap.Canvas.Handle, 0, 0, w, h, SRCPAINT);
     //BitBlt(Canvas.Handle, 270, 60, w, h, Mask.Canvas.Handle, 0, 0, SRCAND);
     //BitBlt(bmp.Canvas.Handle, 0, 0, w, h, Bitmap.Canvas.Handle, 0, 0, SRCPAINT);
     //Canvas.Draw(270, 60, bmp);
@@ -631,7 +584,16 @@ begin
     Mask.Free;
   end;
 
-  Canvas.StretchDraw(Bounds(170, 60, bmp.Width*3, bmp.Height*3), bmp);
+  //Canvas.StretchDraw(Bounds(170, 60, bmp.Width*3, bmp.Height*3), bmp);
+  w := bmp.Width * seZoom.Value;
+  h := bmp.Height * seZoom.Value;
+  Image.Picture.Bitmap.Width  := w;
+  Image.Picture.Bitmap.Height := h;
+  //Image.Picture.Bitmap.Canvas.FillRect(Bounds(0, 0, w, h));
+  Image.Canvas.StretchDraw(Bounds(0, 0, w, h), bmp);
+  Image.Transparent := true;
+  //Image.Picture.Bitmap.Transparent := true;
+
   bmp.Free
 end;
 
