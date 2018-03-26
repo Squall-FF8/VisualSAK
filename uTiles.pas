@@ -52,6 +52,8 @@ procedure DrawMapBlock(Win: HWND; X,Y, Zoom, Block: integer; Transparent: boolea
 
 procedure Convert_4BppGBA(bmp: tBitmap; Src: pByte; W,H: integer);
 procedure Convert_4BppSNES(bmp: tBitmap; Src: pByteArray; W,H: integer);
+procedure Convert_3BppSNES(bmp: tBitmap; Src: pByteArray; W,H: integer);
+procedure Convert_2BppSNES(bmp: tBitmap; Src: pByteArray; W,H: integer);
 procedure Convert_8BppPC(var bmp: tBitmap; Src: pByte; W,H: integer);
 
 
@@ -575,7 +577,7 @@ procedure Convert_4BppSNES(bmp: tBitmap; Src: pByteArray; W,H: integer);
       b0, b1, b2, b3: byte;
       p: pByteArray;
 begin
-{  for i := 0 to H-1 do
+  for i := 0 to H-1 do
     for ty := 0 to 7 do begin
       p := bmp.ScanLine[i*8 + ty];
       m := ty*2 + i*w*32;
@@ -592,8 +594,9 @@ begin
             ((b3 shr tx) and $01) shl 3;
         inc(m, 32);
       end;
-    end; }
-  for i := 0 to H-1 do
+    end;
+
+{  for i := 0 to H-1 do
     for ty := 0 to 7 do begin
       p := bmp.ScanLine[i*8 + ty];
       m := ty*2 + i*w*32;
@@ -607,20 +610,52 @@ begin
         end;
         inc(m, 32);
       end;
-    end;
+    end;  }
+end;
 
-{  m := 0;
-  for t := 0 to Num-1 do begin
-    for i := 0 to 7 do
-      for j := 0 to 7 do begin
-        b0 := ( Buffer[m + 2*i] shr (7-j) ) and $01;
-        b1 := ( Buffer[m + 2*i + 1] shr (7-j) ) and $01;
-        b2 := ( Buffer[m + 2*i + 16] shr (7-j) ) and $01;
-        b3 := ( Buffer[m + 2*i + 17] shr (7-j) ) and $01;
-        Tiles[t, i, j] := b0 + b1 shl 1 + b2 shl 2 + b3 shl 3;
+
+procedure Convert_3BppSNES(bmp: tBitmap; Src: pByteArray; W,H: integer);
+  var i, j, tx, ty, m: integer;
+      b0, b1, b2: byte;
+      p: pByteArray;
+begin
+  for i := 0 to H-1 do
+    for ty := 0 to 7 do begin
+      p := bmp.ScanLine[i*8 + ty];
+      m := ty*2 + i*w*24;
+      for j := 0 to W-1 do begin
+        b0 := Src[m];
+        b1 := Src[m + 1];
+        b2 := Src[m + 16];
+        for tx := 7 downto 0 do
+          p[j*8 + 7-tx] :=
+             (b0 shr tx) and $01 +
+            ((b1 shr tx) and $01) shl 1 +
+            ((b2 shr tx) and $01) shl 2;
+        inc(m, 24);
       end;
-    inc(m, 32);
-  end; }
+    end;
+end;
+
+procedure Convert_2BppSNES(bmp: tBitmap; Src: pByteArray; W,H: integer);
+  var i, j, tx, ty, m: integer;
+      b0, b1: byte;
+      p: pByteArray;
+begin
+  for i := 0 to H-1 do
+    for ty := 0 to 7 do begin
+      p := bmp.ScanLine[i*8 + ty];
+      m := ty*2 + i*w*16;
+      for j := 0 to W-1 do begin
+        b0 := Src[m];
+        b1 := Src[m + 1];
+        for tx := 7 downto 0 do
+          p[j*8 + 7-tx] :=
+             (b0 shr tx) and $01 +
+            ((b1 shr tx) and $01) shl 1;
+        inc(m, 16);
+      end;
+    end;
 end;
 
 

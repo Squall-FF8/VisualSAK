@@ -179,7 +179,7 @@ begin
 
   SetLength(Buf, 1024*1024);
   //LoadROM('S:\Test\FFV\work\2564 - Final Fantasy V Advance (U)(Independent).gba');
-  LoadROM('D:\Emulators\GBA\ROM\2564 - Final Fantasy V Advance (U)(Independent).gba');
+  //LoadROM('D:\Emulators\GBA\ROM\2564 - Final Fantasy V Advance (U)(Independent).gba');
 end;
 
 
@@ -213,11 +213,17 @@ end;
 procedure TfmMain.CompressionChange;
   var n: integer;
 begin
-  if Spr.Cmp = ctNone then
-    Spr.SizeRaw := (Spr.W * Spr.H * Spr.BPP) shl 3;
-  if Spr.Cmp = ctLZ77_10 then begin
-    Spr.SizeRaw := pCardinal( @ROM[Spr.Address] )^ shr 8;
-    Spr.SizeCmp := DecodeLZ77InMem( @ROM[Spr.Address], tLZStream(Buf));
+  case Spr.Cmp of
+    ctNone:
+      Spr.SizeRaw := (Spr.W * Spr.H * Spr.BPP) shl 3;
+    ctLZ77_10: begin
+      Spr.SizeRaw := pCardinal( @ROM[Spr.Address] )^ shr 8;
+      Spr.SizeCmp := DecodeLZ77InMem( @ROM[Spr.Address], tLZStream(Buf));
+     end;
+    ctLZSS_FF5: begin
+      Spr.SizeRaw := pWord( @ROM[Spr.Address] )^;
+      Spr.SizeCmp := DecodeLZSS_FF5( @ROM[Spr.Address], tLZStream(Buf));
+    end;
   end;
 
   n := Spr.SizeRaw div (Spr.BPP shl 3);
@@ -496,6 +502,8 @@ begin
   case Spr.Tmpl of
     1: Convert_4BppGBA( bmp, Src, Spr.W, Spr.H);
     2: Convert_4BppSNES(bmp, pByteArray(Src), Spr.W, Spr.H);
+    3: Convert_3BppSNES(bmp, pByteArray(Src), Spr.W, Spr.H);
+    4: Convert_2BppSNES(bmp, pByteArray(Src), Spr.W, Spr.H);
     7: Convert_8BppPC(  bmp, Src, bmp.Width, bmp.Height);
   end;
 
