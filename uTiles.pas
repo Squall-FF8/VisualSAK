@@ -1,7 +1,7 @@
 unit uTiles;
 
 interface
-uses Windows;
+uses Windows, Graphics;
 
 
 type
@@ -23,6 +23,9 @@ type
 
   tMapMap = array[0..1] of word;
   pMapMap = ^tMapMap;
+
+  pByteArray = ^tByteArray;
+  tByteArray = array[word] of Byte;
 
 
 procedure ConvertPal(Address: tPalSNES; Pal: pPal4bpp; Num: cardinal = 16);
@@ -46,6 +49,10 @@ procedure DrawPal(Win: HWND; X,Y,W,H,M,N: integer; Pal: pPal4bpp);
 procedure DrawTile(Win: HWND; X,Y, Zoom: integer; Transparent: boolean; Tile: pTile; Pal: pPal4bpp);
 
 procedure DrawMapBlock(Win: HWND; X,Y, Zoom, Block: integer; Transparent: boolean; Tiles: pTileset; Pal: pPalBack; Map: pMapMap);
+
+procedure Convert_4BppGBA(bmp: tBitmap; Src: pByte; W,H: integer);
+procedure Convert_4BppSNES(bmp: tBitmap; Src: pByteArray; W,H: integer);
+procedure Convert_8BppPC(var bmp: tBitmap; Src: pByte; W,H: integer);
 
 
 implementation
@@ -534,6 +541,98 @@ begin
   SelectObject(dc, pen);
   DeleteObject(SelectObject(dc, brush));
   ReleaseDC(Win, dc);
+end;
+
+
+
+
+procedure Convert_4BppGBA(bmp: tBitmap; Src: pByte; W,H: integer);
+  var i, j, ty: integer;
+      p: PByteArray;
+begin
+  for i := 0 to H -1 do
+    for j := 0 to W -1 do
+      for ty := 0 to 7 do begin
+        p := bmp.ScanLine[i*8 + ty];
+        p[j*8]     := Src^ and $0F;
+        p[j*8 + 1] := Src^ shr 4;
+        inc(Src);
+        p[j*8 + 2] := Src^ and $0F;
+        p[j*8 + 3] := Src^ shr 4;
+        inc(Src);
+        p[j*8 + 4] := Src^ and $0F;
+        p[j*8 + 5] := Src^ shr 4;
+        inc(Src);
+        p[j*8 + 6] := Src^ and $0F;
+        p[j*8 + 7] := Src^ shr 4;
+        inc(Src);
+      end;
+end;
+
+
+procedure Convert_4BppSNES(bmp: tBitmap; Src: pByteArray; W,H: integer);
+  var i, j, tx, ty, m: integer;
+      b0, b1, b2, b3: byte;
+      p: pByteArray;
+begin
+{  for i := 0 to H-1 do
+    for ty := 0 to 7 do begin
+      p := bmp.ScanLine[i*8 + ty];
+      m := ty*2 + i*w*32;
+      for j := 0 to W-1 do begin
+        b0 := Src[m];
+        b1 := Src[m + 1];
+        b2 := Src[m + 16];
+        b3 := Src[m + 17];
+        for tx := 7 downto 0 do
+          p[j*8 + 7-tx] :=
+             (b0 shr tx) and $01 +
+            ((b1 shr tx) and $01) shl 1 +
+            ((b2 shr tx) and $01) shl 2 +
+            ((b3 shr tx) and $01) shl 3;
+        inc(m, 32);
+      end;
+    end; }
+  for i := 0 to H-1 do
+    for ty := 0 to 7 do begin
+      p := bmp.ScanLine[i*8 + ty];
+      m := ty*2 + i*w*32;
+      for j := 0 to W-1 do begin
+        for tx := 7 downto 0 do begin
+          b0 := ( Src[m] shr tx ) and $01;
+          b1 := ( Src[m + 1] shr tx ) and $01;
+          b2 := ( Src[m + 16] shr tx ) and $01;
+          b3 := ( Src[m + 17] shr tx ) and $01;
+          p[j*8 + 7-tx] := b0 + b1 shl 1 + b2 shl 2 + b3 shl 3;
+        end;
+        inc(m, 32);
+      end;
+    end;
+
+{  m := 0;
+  for t := 0 to Num-1 do begin
+    for i := 0 to 7 do
+      for j := 0 to 7 do begin
+        b0 := ( Buffer[m + 2*i] shr (7-j) ) and $01;
+        b1 := ( Buffer[m + 2*i + 1] shr (7-j) ) and $01;
+        b2 := ( Buffer[m + 2*i + 16] shr (7-j) ) and $01;
+        b3 := ( Buffer[m + 2*i + 17] shr (7-j) ) and $01;
+        Tiles[t, i, j] := b0 + b1 shl 1 + b2 shl 2 + b3 shl 3;
+      end;
+    inc(m, 32);
+  end; }
+end;
+
+
+procedure Convert_8BppPC(var bmp: tBitmap; Src: pByte; W,H: integer);
+  var i: integer;
+      p: Pointer;
+begin
+  for i := 0 to H -1 do begin
+    p := bmp.ScanLine[i];
+    Move(Src^, p^, W);
+    inc(Src, W);
+  end;
 end;
 
 

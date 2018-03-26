@@ -18,15 +18,16 @@ type
 
 const
   // Tile Format constants
-  tfNone  = 0;
-  tfGBA4  = 1;
-  tfSNES3 = 2;
-  tfSNES4 = 3;
-  tfSNES2 = 4;
-  tf1bpp  = 5;
-  tf8bpp  = 6;
+  tfNone   = 0;
+  tfGBA4   = 1;
+  tfSNES3  = 2;
+  tfSNES4  = 3;
+  tfSNES2  = 4;
+  tf1bpp   = 5;
+  tf8bpp   = 6;
+  tf8bppPC = 7;
 
-  cTmplNum = 6;
+  cTmplNum = 7;
   cTemplate: array[0 .. cTmplNum] of tTemplate = (
     (Name: '';             BPP: 0; Fmt: tfNone),
     (Name: '4bpp (GBA)';   BPP: 4; Fmt: tfGBA4),
@@ -34,7 +35,8 @@ const
     (Name: '3bpp (SNES)';  BPP: 3; Fmt: tfSNES3),
     (Name: '2bpp (SNES)';  BPP: 2; Fmt: tfSNES2),
     (Name: '1bpp';         BPP: 1; Fmt: tf1bpp),
-    (Name: '8bpp';         BPP: 8; Fmt: tf8bpp)
+    (Name: '8bpp';         BPP: 8; Fmt: tf8bpp),
+    (Name: '8bpp (PC)';    BPP: 8; Fmt: tf8bppPC)
   );
 
 
