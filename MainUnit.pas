@@ -4,7 +4,8 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, Buttons, StdCtrls, Spin, Grids, pngextra, ExtCtrls, ComCtrls;
+  Dialogs, Buttons, StdCtrls, Spin, Grids, pngextra, pngimage, ComCtrls,
+  ExtCtrls;
 
 
 type
@@ -47,6 +48,7 @@ type
     Label4: TLabel;
     cbCompression: TComboBox;
     Image: TImage;
+    bExport: TPNGButton;
     procedure bOpenROMClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure lbListClick(Sender: TObject);
@@ -66,6 +68,7 @@ type
     procedure bNewClick(Sender: TObject);
     procedure ePalAddressKeyPress(Sender: TObject; var Key: Char);
     procedure FormDestroy(Sender: TObject);
+    procedure bExportClick(Sender: TObject);
   private
     ROM: array of byte;
     NoChange: boolean;
@@ -239,6 +242,7 @@ end;
 
 procedure TfmMain.lbListClick(Sender: TObject);
 begin
+  bExport.Enabled := lbList.ItemIndex >=0;
   if lbList.ItemIndex < 0 then exit;
   Spr := pointer(lbList.Items.Objects[lbList.ItemIndex]);
 
@@ -315,6 +319,7 @@ procedure TfmMain.bSaveClick(Sender: TObject);
   var i: integer;
       f: file of tVisual;
 begin
+  SaveDialog.Filter := 'Visual SAK (*.vsk)|*.vsk|ALL (*.*)|*.*';
   if not SaveDialog.Execute then exit;
 
   AssignFile(f, SaveDialog.FileName);
@@ -378,7 +383,6 @@ begin
   gPal.Repaint;
 
   if Spr = nil then exit;
-  //Spr.PalNum := 16;
   MakeMonoPal(Spr.Pal, Spr.PalNum, Sender = bPalMonoReverse);
   UpdatePreview;
 end;
@@ -502,5 +506,24 @@ begin
   Image.Canvas.StretchDraw(Bounds(0, 0, w, h), bmp);
 end;
 
+
+procedure TfmMain.bExportClick(Sender: TObject);
+  var png: tPngObject;
+begin
+  SaveDialog.Filter := 'PNG Image (*.png)|*.png|ALL (*.*)|*.*';
+  if not SaveDialog.Execute then exit;
+
+  //bmp.TransparentColor := $1000000;
+  //bmp.TransparentMode := tmFixed;
+  bmp.Transparent := true;
+  png := TPNGObject.Create;
+  png.Assign(bmp);
+  png.CompressionLevel := 9;
+  //png.TransparentColor := $1000000;
+  //png.Transparent := true;
+  png.SaveToFile(SaveDialog.FileName);
+  png.Free;
+  bmp.Transparent := false;
+end;
 
 end.

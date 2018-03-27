@@ -70,7 +70,7 @@ type
   pPalette = ^tPalette;
 
   tVisual = record
-    Name:    string[20];
+    Name:    string[30];
     Address: cardinal;
     SizeRaw,
     SizeCmp: cardinal;
