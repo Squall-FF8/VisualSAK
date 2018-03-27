@@ -10,7 +10,6 @@ procedure StrToLZ(const Str: string; var LZ: tLZStream);
 function  LZToStr(LZ: tLZStream): string;
 
 procedure DecodeLZSS(const Src: tLZStream; var Dst: tLZStream; Header: boolean);
-function  DecodeLZSS1(const Src: tLZStream; var Dst: tLZStream): cardinal;
 
 procedure DecodeLZ77(const Src: tLZStream; var Dst: tLZStream);
 
@@ -18,6 +17,7 @@ procedure DecodeLZ77InMem(const Src: tLZStream; var Dst: tLZStream; Size: cardin
 function DecodeLZ77InMem(const Src: tLZStream; var Dst: tLZStream): cardinal; overload;
 
 function DecodeLZSS_FF5(const Src: tLZStream; var Dst: tLZStream): cardinal;
+function DecodeLZSS_FF6(const Src: tLZStream; var Dst: tLZStream): cardinal;
 
 implementation
   uses Dialogs, Classes;
@@ -272,7 +272,7 @@ begin
 end;
 
 
-function DecodeLZSS1(const Src: tLZStream; var Dst: tLZStream): cardinal;
+function DecodeLZSS_FF6(const Src: tLZStream; var Dst: tLZStream): cardinal;
   var i, j, m: integer;
       Buffer: array[0..$7FF] of byte;
       BufPos, SrcPos, DstPos: integer;

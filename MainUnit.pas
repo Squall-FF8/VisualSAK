@@ -44,9 +44,6 @@ type
     sBar: TStatusBar;
     bPalMono: TPNGButton;
     bPalMonoReverse: TPNGButton;
-    Memo1: TMemo;
-    Memo2: TMemo;
-    Button1: TButton;
     Label4: TLabel;
     cbCompression: TComboBox;
     Image: TImage;
@@ -68,7 +65,6 @@ type
     procedure eAddressKeyPress(Sender: TObject; var Key: Char);
     procedure bNewClick(Sender: TObject);
     procedure ePalAddressKeyPress(Sender: TObject; var Key: Char);
-    procedure Button1Click(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
   private
     ROM: array of byte;
@@ -223,6 +219,10 @@ begin
     ctLZSS_FF5: begin
       Spr.SizeRaw := pWord( @ROM[Spr.Address] )^;
       Spr.SizeCmp := DecodeLZSS_FF5( @ROM[Spr.Address], tLZStream(Buf));
+    end;
+    ctLZSS_FF6: begin
+      Spr.SizeCmp := pWord( @ROM[Spr.Address] )^;
+      Spr.SizeRaw := DecodeLZSS_FF6( @ROM[Spr.Address], tLZStream(Buf));
     end;
   end;
 
@@ -469,18 +469,6 @@ begin
   seHeight.Enabled  := Index >= 0;
   seOffset.Enabled  := Index >= 0;
   NoChange := false;
-end;
-
-
-procedure TfmMain.Button1Click(Sender: TObject);
-  var LZ, LZ1: tLZStream;
-      n: cardinal;
-begin
-  StrToLZ(Memo1.Lines.Text, LZ);
-  SetLength(LZ1, 3000);
-  n := DecodeLZSS1(LZ, LZ1);
-  Memo2.Lines.Text := LZToStr(LZ1);
-  Memo2.Lines.Insert(0, IntToStr(n));
 end;
 
 

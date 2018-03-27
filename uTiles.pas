@@ -615,7 +615,7 @@ end;
 
 
 procedure Convert_3BppSNES(bmp: tBitmap; Src: pByteArray; W,H: integer);
-  var i, j, tx, ty, m: integer;
+  var i, j, tx, ty, m, n: integer;
       b0, b1, b2: byte;
       p: pByteArray;
 begin
@@ -623,16 +623,18 @@ begin
     for ty := 0 to 7 do begin
       p := bmp.ScanLine[i*8 + ty];
       m := ty*2 + i*w*24;
+      n := ty + i*w*24;
       for j := 0 to W-1 do begin
         b0 := Src[m];
         b1 := Src[m + 1];
-        b2 := Src[m + 16];
+        b2 := Src[n + 16];
         for tx := 7 downto 0 do
           p[j*8 + 7-tx] :=
              (b0 shr tx) and $01 +
             ((b1 shr tx) and $01) shl 1 +
             ((b2 shr tx) and $01) shl 2;
         inc(m, 24);
+        inc(n, 24);
       end;
     end;
 end;
