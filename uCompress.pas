@@ -18,6 +18,7 @@ function DecodeLZ77InMem(const Src: tLZStream; var Dst: tLZStream): cardinal; ov
 
 function DecodeLZSS_FF5(const Src: tLZStream; var Dst: tLZStream): cardinal;
 function DecodeLZSS_FF6(const Src: tLZStream; var Dst: tLZStream): cardinal;
+function DecodeLZSS_CT(const Src: tLZStream; var Dst: tLZStream): cardinal;
 
 implementation
   uses Dialogs, Classes;
@@ -363,5 +364,92 @@ begin
   Result := SrcPos;
 end;
 
+
+function DecodeLZSS_CT(const Src: tLZStream; var Dst: tLZStream): cardinal;
+  var i: integer;
+      bCarryFlag, bSmallerBitWidth:boolean;
+	    nCompressedSize: word;
+	    nBytePos, nByteAfter, nWorkPos: cardinal;
+	    nBitCtr, nCurByte, nMem0D: byte;
+
+  procedure CTCopyBytes;
+    var i: integer;
+        nBytesCopyNum: byte;
+	      nBytesCopyOff: word;
+  begin
+  	nBytesCopyNum := Src[nBytePos + 1];
+	  if bSmallerBitWidth then nBytesCopyNum := nBytesCopyNum shr 3
+                        else nBytesCopyNum := nBytesCopyNum shr 4;
+	  inc(nBytesCopyNum, 2);
+	  nBytesCopyOff := pWord(@Src[nBytePos])^;
+  	if bSmallerBitWidth then nBytesCopyOff := nBytesCopyOff and $07FF
+                        else nBytesCopyOff := nBytesCopyOff and $0FFF;
+  	for i := 0 to nBytesCopyNum do
+  		Dst[nWorkPos + i] := Dst[nWorkPos - nBytesCopyOff + i];
+	  inc(nWorkPos, nBytesCopyNum + 1);
+	  inc(nBytePos, 2);
+  end;
+begin
+	bCarryFlag := false;
+	nCompressedSize := pWord(@Src[0])^;
+	nBytePos   := 2;
+	nByteAfter := nBytePos + nCompressedSize;
+	nWorkPos   := 0;
+	bSmallerBitWidth := Src[nByteAfter] >= $C0;
+  nBitCtr := 8;
+
+	while True do begin
+		if nBytePos = nByteAfter then begin
+			nCurByte := Src[nBytePos] and $3F;
+			if nCurByte = 0 then break;
+			nBitCtr := nCurByte;
+			bCarryFlag := false;
+			nByteAfter := pWord(@Src[nBytePos + 1])^;
+			inc(nBytePos, 3);
+		end else begin
+			nCurByte := Src[nBytePos];
+			if nCurByte = 0 then begin
+        for i := 0 to 7 do
+				  Dst[nWorkPos + i] := Src[nBytePos + i + 1];
+				nCurByte := Src[nBytePos + 8];
+        inc(nWorkPos, 8);
+				bCarryFlag := false;
+				inc(nBytePos, 9);
+			end else begin
+				inc(nBytePos);
+        bCarryFlag := (nCurByte and $01) = 1;
+				nCurByte := nCurByte shr 1;
+				nMem0D := nCurByte;
+				if bCarryFlag then CTCopyBytes
+				else begin
+					nCurByte := Src[nBytePos];
+					Dst[nWorkPos] := nCurByte;
+          inc(nWorkPos);
+					inc(nBytePos);
+				end;
+				while True do begin
+					dec(nBitCtr);
+					if nBitCtr = 0 then begin
+						nBitCtr := 8;
+						break;
+					end
+					else begin
+            bCarryFlag := (nMem0D and $01) = 1;
+						nMem0D := nMem0D shr 1;
+						if bCarryFlag then CTCopyBytes
+						else begin
+							nCurByte := Src[nBytePos];
+							Dst[nWorkPos] := nCurByte;
+              inc(nWorkPos);
+							inc(nBytePos);
+						end;
+					end;
+				end;
+			end;
+		end;
+	end;
+
+  Result := nWorkPos;
+end;
 
 end.

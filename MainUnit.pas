@@ -49,6 +49,9 @@ type
     cbCompression: TComboBox;
     Image: TImage;
     bExport: TPNGButton;
+    Button2: TButton;
+    Button3: TButton;
+    Button4: TButton;
     procedure bOpenROMClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure lbListClick(Sender: TObject);
@@ -69,6 +72,10 @@ type
     procedure ePalAddressKeyPress(Sender: TObject; var Key: Char);
     procedure FormDestroy(Sender: TObject);
     procedure bExportClick(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
+    procedure Button3Click(Sender: TObject);
+    procedure Button4Click(Sender: TObject);
   private
     ROM: array of byte;
     NoChange: boolean;
@@ -226,6 +233,10 @@ begin
     ctLZSS_FF6: begin
       Spr.SizeCmp := pWord( @ROM[Spr.Address] )^;
       Spr.SizeRaw := DecodeLZSS_FF6( @ROM[Spr.Address], tLZStream(Buf));
+    end;
+    ctLZSS_CT: begin
+      Spr.SizeCmp := pWord( @ROM[Spr.Address] )^;
+      Spr.SizeRaw := DecodeLZSS_CT( @ROM[Spr.Address], tLZStream(Buf));
     end;
   end;
 
@@ -525,5 +536,109 @@ begin
   png.Free;
   bmp.Transparent := false;
 end;
+
+
+type
+  tSprite = record
+    Offset,
+    Columns: cardinal;
+  end;
+
+var
+  Ind: integer = 0;
+  MaxSpr: integer;
+  Sprite: array[1..200] of tSprite;
+procedure TfmMain.Button2Click(Sender: TObject);
+  var i, p: cardinal;
+      b, Offset_Index, Jump_Amount: byte;
+      off: array[0..3] of byte;
+begin
+  p:= $fda6e;
+  i := 1;
+  while True do begin
+    Sprite[i].Columns := pWord(@ROM[p])^;
+    pCardinal(@off[0])^ := 0;
+    Offset_Index := ROM[p+2] -1;
+    Jump_Amount := 0;
+    inc(p, 3);
+    if Offset_Index < 4 then begin
+      while True do begin
+        b := ROM[p]; inc(p);
+        if b = 0 then break;
+        off[Offset_Index] := b;
+        inc(Offset_Index);
+      end;
+      Jump_Amount := ROM[p]; inc(p);
+    end;
+    Sprite[i].Offset := $30000 + pCardinal(@off[0])^;
+    inc(i);
+    if Jump_Amount >= $80 then break;
+  end;
+  MaxSpr := i -1;
+end;
+
+
+procedure TfmMain.Button1Click(Sender: TObject);
+  var Y, line, W, H: integer;
+      X, TopY, BottomY, Line_Offset, Pixel_Offset: cardinal;
+      Column_Count, Offset, Page_Offset: cardinal;
+      tmp: array[0..255] of cardinal;
+begin
+  bmp.Width  := 64;
+  bmp.Height := 64;
+
+  Move(Pal[0], tmp[0], 256 *4);
+  tmp[255] := ColorToRGB(Color);
+  ByteSwapColors(tmp[0], 256);
+  SetDIBColorTable(bmp.Canvas.Handle, 0, 256, tmp[0]);
+
+  for Y := 0 to 63 do
+    FillChar(bmp.ScanLine[Y]^, 64, 255);
+
+  Column_Count := Sprite[Ind].Columns;
+  Offset := Sprite[Ind].Offset;
+
+  Page_Offset := Offset and $ffff0000;
+  X := (64 - Column_Count) div 2;
+  for line := 0 to Column_Count -1 do begin
+    Line_Offset := Page_Offset + pWord(@ROM[Offset + 2* line])^;
+    while True do begin
+      TopY := pWord(@ROM[Line_Offset])^;
+      if TopY = $FFFF then break;
+      TopY := TopY shr 1;
+      BottomY := pWord(@ROM[Line_Offset+2])^ shr 1;
+      Pixel_Offset := pWord(@ROM[Line_Offset+4])^;
+      for Y := TopY to BottomY-1 do
+        pByteArray(bmp.ScanLine[Y])[X] := ROM[Page_Offset + Pixel_Offset {+ TopY} + Y];
+      inc(Line_Offset, 6);
+    end;
+    inc(X);
+  end;
+  //ShowMessage( IntToHex(Pixel_Offset + BottomY, 4) );
+
+  //Image.Canvas.Draw(0, 0, bmp);
+  w := bmp.Width * 3;
+  h := bmp.Height * 3;
+  Image.Picture.Bitmap.Width  := w;
+  Image.Picture.Bitmap.Height := h;
+  Image.Canvas.StretchDraw(Bounds(0, 0, w, h), bmp);
+
+end;
+
+
+procedure TfmMain.Button3Click(Sender: TObject);
+begin
+  if Ind >= MaxSpr then exit;
+  inc(Ind);
+  Button1Click(Self);
+end;
+
+procedure TfmMain.Button4Click(Sender: TObject);
+begin
+  if Ind = 1 then exit;
+  dec(Ind);
+  Button1Click(Self);
+end;
+
 
 end.
