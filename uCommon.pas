@@ -24,7 +24,7 @@ const
   tfSNES4  = 3;
   tfSNES2  = 4;
   tf1bpp   = 5;
-  tf8bpp   = 6;
+  tf8bppM7 = 6;
   tf8bppPC = 7;
 
   cTmplNum = 7;
@@ -35,7 +35,7 @@ const
     (Name: '3bpp (SNES)';  BPP: 3; Fmt: tfSNES3),
     (Name: '2bpp (SNES)';  BPP: 2; Fmt: tfSNES2),
     (Name: '1bpp';         BPP: 1; Fmt: tf1bpp),
-    (Name: '8bpp';         BPP: 8; Fmt: tf8bpp),
+    (Name: '8bpp (Mode7)'; BPP: 8; Fmt: tf8bppM7),
     (Name: '8bpp (PC)';    BPP: 8; Fmt: tf8bppPC)
   );
 

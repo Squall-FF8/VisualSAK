@@ -55,6 +55,7 @@ procedure Convert_4BppSNES(bmp: tBitmap; Src: pByteArray; W,H: integer);
 procedure Convert_3BppSNES(bmp: tBitmap; Src: pByteArray; W,H: integer);
 procedure Convert_2BppSNES(bmp: tBitmap; Src: pByteArray; W,H: integer);
 procedure Convert_8BppPC(var bmp: tBitmap; Src: pByte; W,H: integer);
+procedure Convert_8BppMode7(var bmp: tBitmap; Src: pByteArray; W,H: integer);
 
 
 implementation
@@ -669,6 +670,25 @@ begin
     p := bmp.ScanLine[i];
     Move(Src^, p^, W);
     inc(Src, W);
+  end;
+end;
+
+
+procedure Convert_8BppMode7(var bmp: tBitmap; Src: pByteArray; W,H: integer);
+  var i, j, ty, tx, m: integer;
+      p: pByteArray;
+begin
+  for i := 0 to H -1 do begin
+    for ty := 0 to 7 do begin
+      p := bmp.ScanLine[i*8 + ty];
+      m := 1 + ty * 16;
+      for j := 0 to W -1 do begin
+        for tx := 0 to 7 do
+          p[8*j + tx] := Src[m + 2*tx];
+        inc(m, $80);
+      end;
+    end;
+    inc(Src, w*$80);
   end;
 end;
 
