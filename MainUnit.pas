@@ -49,6 +49,8 @@ type
     cbCompression: TComboBox;
     Image: TImage;
     bExport: TPNGButton;
+    bOpenPal: TPNGButton;
+    dOpenPal: TOpenDialog;
     procedure bOpenROMClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure lbListClick(Sender: TObject);
@@ -69,6 +71,7 @@ type
     procedure ePalAddressKeyPress(Sender: TObject; var Key: Char);
     procedure FormDestroy(Sender: TObject);
     procedure bExportClick(Sender: TObject);
+    procedure bOpenPalClick(Sender: TObject);
   private
     ROM: array of byte;
     NoChange: boolean;
@@ -420,7 +423,7 @@ begin
   for i := 0 to sePalNum.Value -1 do begin
     R := p^ and $1F;
     G := (p^ shr 5) and $1F;
-    B := (p^shr 10) and $1F;
+    B := (p^ shr 10) and $1F;
     Pal[i] := (R * 255) div 31 + ((G*255) div 31) shl 8 + ((B*255) div 31 ) shl 16;
     inc(p);
   end;
@@ -531,5 +534,31 @@ begin
   bmp.Transparent := false;
 end;
 
+
+procedure TfmMain.bOpenPalClick(Sender: TObject);
+  var i: integer;
+      tmp: array[0..255] of Word;
+      p: pWord;
+      R, G, B: byte;
+      f, n: cardinal;
+begin
+  if not dOpenPal.Execute then exit;
+
+  f := CreateFile(pchar(dOpenPal.FileName), GENERIC_READ, FILE_SHARE_READ, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+  if f = INVALID_HANDLE_VALUE then raise Exception.Create(format('%s not found', [Caption]));
+  SetFilePointer(f, $618, nil, FILE_BEGIN);
+  ReadFile(f, tmp[0], 512, n, nil);
+  CloseHandle(f);
+
+  p := @tmp[0];
+  for i := 0 to 255 do begin
+    R := p^ and $1F;
+    G := (p^ shr 5) and $1F;
+    B := (p^ shr 10) and $1F;
+    Pal[i] := (R * 255) div 31 + ((G*255) div 31) shl 8 + ((B*255) div 31 ) shl 16;
+    inc(p);
+  end;
+  gPal.Repaint;
+end;
 
 end.
