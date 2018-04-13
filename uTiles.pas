@@ -56,6 +56,7 @@ procedure Convert_3BppSNES(bmp: tBitmap; Src: pByteArray; W,H: integer);
 procedure Convert_2BppSNES(bmp: tBitmap; Src: pByteArray; W,H: integer);
 procedure Convert_8BppPC(var bmp: tBitmap; Src: pByte; W,H: integer);
 procedure Convert_8BppMode7(var bmp: tBitmap; Src: pByteArray; W,H: integer);
+procedure Convert_8BppMode3(var bmp: tBitmap; Src: pByteArray; W,H: integer);
 
 
 implementation
@@ -675,21 +676,56 @@ end;
 
 
 procedure Convert_8BppMode7(var bmp: tBitmap; Src: pByteArray; W,H: integer);
-  var i, j, ty, tx, m: integer;
+  var i, j, ty, tx, m, n: integer;
       p: pByteArray;
 begin
+  n := 0;
   for i := 0 to H -1 do begin
     for ty := 0 to 7 do begin
       p := bmp.ScanLine[i*8 + ty];
-      m := 1 + ty * 16;
+      m := n + 1 + ty * 16;
       for j := 0 to W -1 do begin
         for tx := 0 to 7 do
           p[8*j + tx] := Src[m + 2*tx];
         inc(m, $80);
       end;
     end;
-    inc(Src, w*$80);
+    inc(n, w*$80);
   end;
+end;
+
+
+procedure Convert_8BppMode3(var bmp: tBitmap; Src: pByteArray; W,H: integer);
+  var i, j, tx, ty, m: integer;
+      b0, b1, b2, b3, b4, b5, b6, b7: byte;
+      p: pByteArray;
+begin
+  for i := 0 to H-1 do
+    for ty := 0 to 7 do begin
+      p := bmp.ScanLine[i*8 + ty];
+      m := ty*2 + i*w*64;
+      for j := 0 to W-1 do begin
+        b0 := Src[m];
+        b1 := Src[m + 1];
+        b2 := Src[m + $10];
+        b3 := Src[m + $11];
+        b4 := Src[m + $20];
+        b5 := Src[m + $21];
+        b6 := Src[m + $30];
+        b7 := Src[m + $31];
+        for tx := 7 downto 0 do
+          p[j*8 + 7-tx] :=
+             (b0 shr tx) and $01 +
+            ((b1 shr tx) and $01) shl 1 +
+            ((b2 shr tx) and $01) shl 2 +
+            ((b3 shr tx) and $01) shl 3 +
+            ((b4 shr tx) and $01) shl 4 +
+            ((b5 shr tx) and $01) shl 5 +
+            ((b6 shr tx) and $01) shl 6 +
+            ((b7 shr tx) and $01) shl 7;
+        inc(m, 64);
+      end;
+    end;
 end;
 
 

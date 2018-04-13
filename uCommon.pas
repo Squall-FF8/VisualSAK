@@ -26,8 +26,9 @@ const
   tf1bpp   = 5;
   tf8bppM7 = 6;
   tf8bppPC = 7;
+  tf8bppM3 = 8;
 
-  cTmplNum = 7;
+  cTmplNum = 8;
   cTemplate: array[0 .. cTmplNum] of tTemplate = (
     (Name: '';             BPP: 0; Fmt: tfNone),
     (Name: '4bpp (GBA)';   BPP: 4; Fmt: tfGBA4),
@@ -36,7 +37,8 @@ const
     (Name: '2bpp (SNES)';  BPP: 2; Fmt: tfSNES2),
     (Name: '1bpp';         BPP: 1; Fmt: tf1bpp),
     (Name: '8bpp (Mode7)'; BPP: 8; Fmt: tf8bppM7),
-    (Name: '8bpp (PC)';    BPP: 8; Fmt: tf8bppPC)
+    (Name: '8bpp (PC)';    BPP: 8; Fmt: tf8bppPC),
+    (Name: '8bpp (Mode3)'; BPP: 8; Fmt: tf8bppM3)
   );
 
 
