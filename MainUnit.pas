@@ -504,8 +504,9 @@ begin
     3: Convert_3BppSNES (bmp, pByteArray(Src), Spr.W, Spr.H);
     4: Convert_2BppSNES (bmp, pByteArray(Src), Spr.W, Spr.H);
     6: Convert_8BppMode7(bmp, pByteArray(Src), Spr.W, Spr.H);
-    7: Convert_8BppPC   (bmp, Src, Spr.W, Spr.H);
+    7: Convert_8BppMode7b(bmp, pByteArray(Src), Spr.W, Spr.H);
     8: Convert_8BppMode3(bmp, pByteArray(Src), Spr.W, Spr.H);
+    9: Convert_8BppPC   (bmp, Src, Spr.W, Spr.H);
   end;
 
   w := bmp.Width * seZoom.Value;
