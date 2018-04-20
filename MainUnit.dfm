@@ -13,7 +13,7 @@ object fmMain: TfmMain
   Font.Name = 'MS Sans Serif'
   Font.Style = []
   OldCreateOrder = False
-  Position = poDesktopCenter
+  Position = poScreenCenter
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   PixelsPerInch = 96
@@ -32,6 +32,7 @@ object fmMain: TfmMain
     Height = 412
     Align = alLeft
     ItemHeight = 13
+    PopupMenu = popList
     TabOrder = 0
     OnClick = lbListClick
   end
@@ -1452,5 +1453,13 @@ object fmMain: TfmMain
     Filter = 'zSnes Save State|*.zs?|ALL|*.*'
     Left = 16
     Top = 120
+  end
+  object popList: TPopupMenu
+    Left = 32
+    Top = 176
+    object miNewAddressfromtheEnd: TMenuItem
+      Caption = 'New Address from the End'
+      OnClick = miNewAddressfromtheEndClick
+    end
   end
 end

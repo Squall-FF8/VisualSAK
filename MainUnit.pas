@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, Buttons, StdCtrls, Spin, Grids, pngextra, pngimage, ComCtrls,
-  ExtCtrls;
+  ExtCtrls, Menus;
 
 
 type
@@ -51,6 +51,8 @@ type
     bExport: TPNGButton;
     bOpenPal: TPNGButton;
     dOpenPal: TOpenDialog;
+    popList: TPopupMenu;
+    miNewAddressfromtheEnd: TMenuItem;
     procedure bOpenROMClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure lbListClick(Sender: TObject);
@@ -72,6 +74,7 @@ type
     procedure FormDestroy(Sender: TObject);
     procedure bExportClick(Sender: TObject);
     procedure bOpenPalClick(Sender: TObject);
+    procedure miNewAddressfromtheEndClick(Sender: TObject);
   private
     ROM: array of byte;
     NoChange: boolean;
@@ -215,6 +218,7 @@ end;
 procedure TfmMain.CompressionChange;
   var n: integer;
 begin
+  FillChar(Buf[0], 1024*1024, 0);
   case Spr.Cmp of
     ctNone:
       Spr.SizeRaw := (Spr.W * Spr.H * Spr.BPP) shl 3;
@@ -566,6 +570,14 @@ begin
     Move(Pal, Spr.Pal, 256 * 4);
     UpdatePreview;
   end;
+end;
+
+
+procedure TfmMain.miNewAddressfromtheEndClick(Sender: TObject);
+begin
+  if Spr = nil then exit;
+  eAddress.Text := format('$%.6x',[Spr.Address + Spr.SizeRaw]);
+  bAddAddressClick(nil);
 end;
 
 end.
