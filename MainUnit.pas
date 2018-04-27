@@ -53,6 +53,8 @@ type
     dOpenPal: TOpenDialog;
     popList: TPopupMenu;
     miNewAddressfromtheEnd: TMenuItem;
+    bSavePal: TPNGButton;
+    dSavePal: TSaveDialog;
     procedure bOpenROMClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure lbListClick(Sender: TObject);
@@ -75,6 +77,7 @@ type
     procedure bExportClick(Sender: TObject);
     procedure bOpenPalClick(Sender: TObject);
     procedure miNewAddressfromtheEndClick(Sender: TObject);
+    procedure bSavePalClick(Sender: TObject);
   private
     ROM: array of byte;
     NoChange: boolean;
@@ -503,14 +506,15 @@ begin
   if Spr.Cmp > 0 then Src := @buf[Spr.Off]
                  else Src := @ROM[Spr.Address+Spr.Off];
   case Spr.Tmpl of
-    1: Convert_4BppGBA  (bmp, Src, Spr.W, Spr.H);
-    2: Convert_4BppSNES (bmp, pByteArray(Src), Spr.W, Spr.H);
-    3: Convert_3BppSNES (bmp, pByteArray(Src), Spr.W, Spr.H);
-    4: Convert_2BppSNES (bmp, pByteArray(Src), Spr.W, Spr.H);
-    6: Convert_8BppMode7(bmp, pByteArray(Src), Spr.W, Spr.H);
-    7: Convert_8BppMode7b(bmp, pByteArray(Src), Spr.W, Spr.H);
-    8: Convert_8BppMode3(bmp, pByteArray(Src), Spr.W, Spr.H);
-    9: Convert_8BppPC   (bmp, Src, Spr.W, Spr.H);
+     1: Convert_4BppGBA   (bmp, Src, Spr.W, Spr.H);
+     2: Convert_4BppSNES  (bmp, pByteArray(Src), Spr.W, Spr.H);
+     3: Convert_3BppSNES  (bmp, pByteArray(Src), Spr.W, Spr.H);
+     4: Convert_2BppSNES  (bmp, pByteArray(Src), Spr.W, Spr.H);
+     6: Convert_8BppMode7 (bmp, pByteArray(Src), Spr.W, Spr.H);
+     7: Convert_8BppMode7b(bmp, pByteArray(Src), Spr.W, Spr.H);
+     8: Convert_8BppMode3 (bmp, pByteArray(Src), Spr.W, Spr.H);
+     9: Convert_8BppPC    (bmp, Src, Spr.W, Spr.H);
+    10: Convert_4BppFX    (bmp, Src, Spr.W, Spr.H);
   end;
 
   w := bmp.Width * seZoom.Value;
@@ -542,34 +546,34 @@ end;
 
 
 procedure TfmMain.bOpenPalClick(Sender: TObject);
-  var i: integer;
-      tmp: array[0..255] of Word;
-      p: pWord;
-      R, G, B: byte;
-      f, n: cardinal;
+  var e: string;
 begin
   if not dOpenPal.Execute then exit;
 
-  f := CreateFile(pchar(dOpenPal.FileName), GENERIC_READ, FILE_SHARE_READ, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
-  if f = INVALID_HANDLE_VALUE then raise Exception.Create(format('%s not found', [Caption]));
-  SetFilePointer(f, $618, nil, FILE_BEGIN);
-  ReadFile(f, tmp[0], 512, n, nil);
-  CloseHandle(f);
+  e := UpperCase(ExtractFileExt(dOpenPal.FileName));
+  if      e = '.ACO' then LoadPalAco(dOpenPal.FileName, @Pal)
+  else if e = '.ACT' then LoadPalAct(dOpenPal.FileName, @Pal)
+  else if (e[2] = 'Z') and (e[3] = 'S') then LoadPalZst(dOpenPal.FileName, @Pal)
+  else exit;
 
-  p := @tmp[0];
-  for i := 0 to 255 do begin
-    R := p^ and $1F;
-    G := (p^ shr 5) and $1F;
-    B := (p^ shr 10) and $1F;
-    Pal[i] := (R * 255) div 31 + ((G*255) div 31) shl 8 + ((B*255) div 31 ) shl 16;
-    inc(p);
-  end;
   gPal.Repaint;
 
   if Spr <> nil then begin
     Move(Pal, Spr.Pal, 256 * 4);
     UpdatePreview;
   end;
+end;
+
+
+procedure TfmMain.bSavePalClick(Sender: TObject);
+  var e: string;
+begin
+  if not dSavePal.Execute then exit;
+
+  e := UpperCase(ExtractFileExt(dSavePal.FileName));
+  if      e = '.ACO' then SavePalAco(dSavePal.FileName, @Pal)
+  else if e = '.ACT' then SavePalAct(dSavePal.FileName, @Pal)
+  else if (e[2] = 'Z') and (e[3] = 'S') then SavePalZst(dSavePal.FileName, @Pal)
 end;
 
 

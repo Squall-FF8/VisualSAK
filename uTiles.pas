@@ -58,6 +58,7 @@ procedure Convert_8BppPC(var bmp: tBitmap; Src: pByte; W,H: integer);
 procedure Convert_8BppMode7(var bmp: tBitmap; Src: pByteArray; W,H: integer);
 procedure Convert_8BppMode7b(var bmp: tBitmap; Src: pByteArray; W,H: integer);
 procedure Convert_8BppMode3(var bmp: tBitmap; Src: pByteArray; W,H: integer);
+procedure Convert_4BppFX(var bmp: tBitmap; Src: pByte; W,H: integer);
 
 
 implementation
@@ -747,6 +748,40 @@ begin
         inc(m, 64);
       end;
     end;
+end;
+
+
+procedure Convert_4BppFX(var bmp: tBitmap; Src: pByte; W,H: integer);
+  var i, m, r, y, y2: integer;
+      p, p2: pByteArray;
+      c1, c2: byte;
+      DrawDown: boolean;
+begin
+  y := 0;
+  m := 1;
+  while (y < H) and (m < 33) do begin
+    p  := bmp.ScanLine[y];
+    y2 := y + $20;
+    DrawDown := y2 < H;
+    if DrawDown then
+      p2 := bmp.ScanLine[y2];
+    if W < 256 then r := W
+               else r := 256;
+
+    for i := 0 to r-1 do begin
+      c1 := Src^ and $0F;
+      p[i] := c1;
+      if DrawDown then begin
+        c2 := Src^ shr 4;
+        p2[i] := c2;
+      end;
+      inc(Src);
+    end;
+    if r < 256 then inc(Src, 256-r);
+
+    inc(m);
+    inc(y);
+  end;
 end;
 
 
