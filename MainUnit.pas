@@ -5,13 +5,12 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, Buttons, StdCtrls, Spin, Grids, pngextra, pngimage, ComCtrls,
-  ExtCtrls, Menus;
+  ExtCtrls, Menus, ImgList;
 
 
 type
   TfmMain = class(TForm)
     OpenDialog: TOpenDialog;
-    lbList: TListBox;
     SaveDialog: TSaveDialog;
     ColorDialog: TColorDialog;
     Panel1: TPanel;
@@ -55,6 +54,24 @@ type
     miNewAddressfromtheEnd: TMenuItem;
     bSavePal: TPNGButton;
     dSavePal: TSaveDialog;
+    Panel3: TPanel;
+    lbList: TListBox;
+    Panel4: TPanel;
+    bGraphicUp: TPNGButton;
+    bGraphicDown: TPNGButton;
+    bAddAfterEnd: TPNGButton;
+    bSortName: TPNGButton;
+    miMoveUp: TMenuItem;
+    miMoveDown: TMenuItem;
+    N1: TMenuItem;
+    N2: TMenuItem;
+    miAddAddress: TMenuItem;
+    miDelAddress: TMenuItem;
+    N3: TMenuItem;
+    miSortByName: TMenuItem;
+    miSortByAddress: TMenuItem;
+    ImageList1: TImageList;
+    bSortAddress: TPNGButton;
     procedure bOpenROMClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure lbListClick(Sender: TObject);
@@ -78,6 +95,9 @@ type
     procedure bOpenPalClick(Sender: TObject);
     procedure miNewAddressfromtheEndClick(Sender: TObject);
     procedure bSavePalClick(Sender: TObject);
+    procedure bGraphicUpClick(Sender: TObject);
+    procedure bGraphicDownClick(Sender: TObject);
+    procedure bSortByNameClick(Sender: TObject);
   private
     ROM: array of byte;
     NoChange: boolean;
@@ -204,7 +224,7 @@ end;
 
 procedure TfmMain.SetCaption;
 begin
-  Caption := format('Visual SAK:> %s  <:>  %s', [DocName, RomName]);
+  Caption := format('Visual SAK - %s  -  %s', [DocName, RomName]);
 end;
 
 
@@ -224,7 +244,7 @@ begin
   FillChar(Buf[0], 1024*1024, 0);
   case Spr.Cmp of
     ctNone:
-      Spr.SizeRaw := (Spr.W * Spr.H * Spr.BPP) shl 3;
+      Spr.SizeRaw := (Spr.W * Spr.H * Spr.tW * Spr.tH * Spr.BPP) shr 3;
     ctLZ77_10: begin
       Spr.SizeRaw := pCardinal( @ROM[Spr.Address] )^ shr 8;
       Spr.SizeCmp := DecodeLZ77InMem( @ROM[Spr.Address], tLZStream(Buf));
@@ -243,7 +263,8 @@ begin
     end;
   end;
 
-  n := Spr.SizeRaw div (Spr.BPP shl 3);
+  if (Spr.tW = 1) and (Spr.tH = 1) then n := 0
+                                   else n := Spr.SizeRaw div (Spr.BPP shl 3);
   sBar.Panels[0].Text := format('#Tiles: '+cFmt, [n, n]);
   sBar.Panels[1].Text := format('RawSize: '+cFmt, [Spr.SizeRaw, Spr.SizeRaw]);
   sBar.Panels[2].Text := format('Compr.Size: '+cFmt, [Spr.SizeCmp, Spr.SizeCmp]);
@@ -285,6 +306,8 @@ begin
     EnableContols(true, cbTemplate.ItemIndex);
     Spr.Tmpl := byte(cbTemplate.Items.Objects[cbTemplate.ItemIndex]);
     Spr.BPP  := cTemplate[Spr.Tmpl].BPP;
+    Spr.tW   := cTemplate[Spr.Tmpl].tW;
+    Spr.tH   := cTemplate[Spr.Tmpl].tH;
     Spr.PalNum := 1 shl Spr.BPP;
     sePalNum.Value := Spr.PalNum;
     MakeMonoPal(Spr.Pal, Spr.PalNum);
@@ -304,6 +327,7 @@ end;
 
 procedure TfmMain.bAddAddressClick(Sender: TObject);
   var v: pVisual;
+      n: integer;
 begin
   New(v);
   FillChar(v^, Sizeof(v^), 0);
@@ -312,12 +336,16 @@ begin
   v.H    := seHeight.Value;
   v.W    := seWidth.Value;
   v.Off  := seOffset.Value;
-  v.BPP  := 1;
-  v.tW   := 8;
-  v.tH   := 8;
 
-  //v.PalNum := 16;
-  //MakeMonoPal(v.Pal, 16);
+  if cbTemplate.ItemIndex < 0 then n := 0
+                              else n := integer(cbTemplate.Items.Objects[cbTemplate.ItemIndex]);
+  v.Tmpl := n;
+  v.BPP  := cTemplate[n].BPP;
+  v.tW   := cTemplate[n].tW;
+  v.tH   := cTemplate[n].tH;
+  v.PalNum := 1 shl v.BPP;;
+  MakeMonoPal(v.Pal, v.PalNum);
+
   lbList.AddItem(v.Name, tObject(v));
   lbList.ItemIndex := lbList.Count -1;
   lbListClick(Self);
@@ -495,8 +523,8 @@ procedure  TfmMain.NewDraw;
       Src: pByte;
       tmp: array[0..255] of cardinal;
 begin
-  bmp.Width  := Spr.W shl 3;
-  bmp.Height := Spr.H shl 3;
+  bmp.Width  := Spr.W * Spr.tW;
+  bmp.Height := Spr.H * Spr.tH;
 
   Move(Spr.Pal[0], tmp[0], 256 *4);
   tmp[0] := ColorToRGB(Color);
@@ -582,6 +610,35 @@ begin
   if Spr = nil then exit;
   eAddress.Text := format('$%.6x',[Spr.Address + Spr.SizeRaw]);
   bAddAddressClick(nil);
+end;
+
+
+procedure TfmMain.bGraphicUpClick(Sender: TObject);
+  var ind: integer;
+begin
+  ind := lbList.ItemIndex;
+  if ind < 1 then exit;
+  lbList.Items.Exchange(ind, ind-1);
+end;
+
+
+procedure TfmMain.bGraphicDownClick(Sender: TObject);
+  var ind: integer;
+begin
+  ind := lbList.ItemIndex;
+  if (ind < 0) or (ind = (lbList.Count - 1)) then exit;
+  lbList.Items.Exchange(ind, ind+1);
+end;
+
+
+procedure TfmMain.bSortByNameClick(Sender: TObject);
+  var sl: TStringList;
+begin
+  sl := TStringList.Create;
+  sl.Assign(lbList.Items);
+  sl.Sort;
+  lbList.Items.Assign(sl);
+  sl.Free;
 end;
 
 end.

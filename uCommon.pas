@@ -11,7 +11,9 @@ const
 type
   tTemplate = record
     Name: string[20];
-    BPP : byte;
+    BPP,
+    tW,
+    tH: byte;
   end;
   pTemplate = ^tTemplate;
 
@@ -19,17 +21,17 @@ const
   // Tile Format constants
   cTmplNum = 10;
   cTemplate: array[0 .. cTmplNum] of tTemplate = (
-    (Name: '';               BPP: 0),
-    (Name: '4bpp (GBA)';     BPP: 4),
-    (Name: '4bpp (SNES)';    BPP: 4),
-    (Name: '3bpp (SNES)';    BPP: 3),
-    (Name: '2bpp (SNES)';    BPP: 2),
-    (Name: '1bpp';           BPP: 1),
-    (Name: '8bpp (Mode7-1)'; BPP: 8),
-    (Name: '8bpp (Mode7-2)'; BPP: 8),
-    (Name: '8bpp (Mode3)';   BPP: 8),
-    (Name: '8bpp (PC)';      BPP: 8),
-    (Name: '4bpp (SNES-FX)'; BPP: 4)
+    (Name: '';               BPP: 1; tW:1; tH:1),
+    (Name: '4bpp (GBA)';     BPP: 4; tW:8; tH:8),
+    (Name: '4bpp (SNES)';    BPP: 4; tW:8; tH:8),
+    (Name: '3bpp (SNES)';    BPP: 3; tW:8; tH:8),
+    (Name: '2bpp (SNES)';    BPP: 2; tW:8; tH:8),
+    (Name: '1bpp';           BPP: 1; tW:8; tH:8),
+    (Name: '8bpp (Mode7-1)'; BPP: 8; tW:8; tH:8),
+    (Name: '8bpp (Mode7-2)'; BPP: 8; tW:8; tH:8),
+    (Name: '8bpp (Mode3)';   BPP: 8; tW:8; tH:8),
+    (Name: '8bpp (PC)';      BPP: 8; tW:1; tH:1),
+    (Name: '4bpp (SNES-FX)'; BPP: 4; tW:1; tH:1)
   );
 
 
