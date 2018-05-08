@@ -113,7 +113,7 @@ RootDir=
 IncludeVerInfo=1
 AutoIncBuild=0
 MajorVer=3
-MinorVer=1
+MinorVer=2
 Release=0
 Build=0
 Debug=0
@@ -126,13 +126,13 @@ CodePage=1252
 [Version Info Keys]
 CompanyName=
 FileDescription=Visual Swiss Army Knife
-FileVersion=3.1.0.0
+FileVersion=3.2.0.0
 InternalName=
 LegalCopyright=
 LegalTrademarks=
 OriginalFilename=
 ProductName=Visual Swiss Army Knife
-ProductVersion=3.1.0.0
+ProductVersion=3.2.0.0
 Comments=
 [Excluded Packages]
 c:\Program Files (x86)\borland\delphi7\Bin\dclIntraweb_50_70.bpl=Intraweb 5.0 Design Package for Delphi 7

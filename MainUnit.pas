@@ -110,6 +110,7 @@ type
     procedure CompressionChange;
     procedure SetCaption;
     procedure NewDraw;
+    procedure ClearImage;
   public
   end;
 
@@ -482,6 +483,9 @@ procedure TfmMain.bNewClick(Sender: TObject);
 begin
   EmptyList;
   Spr := nil;
+  DocName := '';
+  SetCaption;
+  ClearImage;
 end;
 
 
@@ -550,6 +554,15 @@ begin
   Image.Picture.Bitmap.Width  := w;
   Image.Picture.Bitmap.Height := h;
   Image.Canvas.StretchDraw(Bounds(0, 0, w, h), bmp);
+end;
+
+
+procedure TfmMain.ClearImage;
+begin
+  with Image.Picture.Bitmap do begin
+    Canvas.Brush.Color := Color;
+    Canvas.FillRect(Bounds(0, 0, Width, Height));
+  end;
 end;
 
 
