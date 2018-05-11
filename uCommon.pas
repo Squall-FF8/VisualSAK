@@ -19,7 +19,7 @@ type
 
 const
   // Tile Format constants
-  cTmplNum = 10;
+  cTmplNum = 11;
   cTemplate: array[0 .. cTmplNum] of tTemplate = (
     (Name: '';               BPP: 1; tW:1; tH:1),
     (Name: '4bpp (GBA)';     BPP: 4; tW:8; tH:8),
@@ -31,7 +31,8 @@ const
     (Name: '8bpp (Mode7-2)'; BPP: 8; tW:8; tH:8),
     (Name: '8bpp (Mode3)';   BPP: 8; tW:8; tH:8),
     (Name: '8bpp (PC)';      BPP: 8; tW:1; tH:1),
-    (Name: '4bpp (SNES-FX)'; BPP: 4; tW:1; tH:1)
+    (Name: '4bpp (SNES-FX)'; BPP: 4; tW:1; tH:1),
+    (Name: '2bpp (NES)';     BPP: 2; tW:8; tH:8)
   );
 
 
