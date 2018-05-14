@@ -157,7 +157,9 @@ begin
   RomName := FileName;
   SetCaption;
   f := CreateFile(pchar(FileName), GENERIC_READ, FILE_SHARE_READ, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
-  if f = INVALID_HANDLE_VALUE then raise Exception.Create(format('%s not found', [Caption]));
+  n := GetLastError;
+  ShowMessage(IntToStr(n));
+  if f = INVALID_HANDLE_VALUE then raise Exception.Create(format('%s not found', [FileName]));
   n := GetFileSize(f, nil);
   SetLength(ROM, n);
   ReadFile(f, ROM[0], n, n, nil);
@@ -548,6 +550,7 @@ begin
      9: Convert_8BppPC    (bmp, Src, Spr.W, Spr.H);
     10: Convert_4BppFX    (bmp, Src, Spr.W, Spr.H);
     11: Convert_2BppNES   (bmp, pByteArray(Src), Spr.W, Spr.H);
+    12: Convert_2BppNGP   (bmp, pByteArray(Src), Spr.W, Spr.H);
   end;
 
   w := bmp.Width * seZoom.Value;
