@@ -551,6 +551,7 @@ begin
     10: Convert_4BppFX    (bmp, Src, Spr.W, Spr.H);
     11: Convert_2BppNES   (bmp, pByteArray(Src), Spr.W, Spr.H);
     12: Convert_2BppNGP   (bmp, pByteArray(Src), Spr.W, Spr.H);
+    13: Convert_4BppPC    (bmp, Src, Spr.W, Spr.H);
   end;
 
   w := bmp.Width * seZoom.Value;

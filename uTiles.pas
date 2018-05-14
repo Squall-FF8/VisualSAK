@@ -61,6 +61,7 @@ procedure Convert_8BppMode3(var bmp: tBitmap; Src: pByteArray; W,H: integer);
 procedure Convert_4BppFX(var bmp: tBitmap; Src: pByte; W,H: integer);
 procedure Convert_2BppNES(bmp: tBitmap; Src: pByteArray; W,H: integer);
 procedure Convert_2BppNGP(bmp: tBitmap; Src: pByteArray; W,H: integer);
+procedure Convert_4BppPC(var bmp: tBitmap; Src: pByte; W,H: integer);
 
 
 implementation
@@ -828,6 +829,20 @@ begin
     end;
 end;
 
+
+procedure Convert_4BppPC(var bmp: tBitmap; Src: pByte; W,H: integer);
+  var i, j: integer;
+      p: pByteArray;
+begin
+  for i := 0 to H -1 do begin
+    p := bmp.ScanLine[i];
+    for j := 0 to W shr 1 -1 do begin
+      p[2*j]     := Src^ and $0F;
+      p[2*j + 1] := Src^ shr 4;
+      inc(Src);
+    end;
+  end;
+end;
 
 
 initialization
