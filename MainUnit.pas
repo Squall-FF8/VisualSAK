@@ -72,6 +72,9 @@ type
     miSortByAddress: TMenuItem;
     ImageList1: TImageList;
     bSortAddress: TPNGButton;
+    Test: TImage;
+    Button1: TButton;
+    seLen: TSpinEdit;
     procedure bOpenROMClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure lbListClick(Sender: TObject);
@@ -98,6 +101,7 @@ type
     procedure bGraphicUpClick(Sender: TObject);
     procedure bGraphicDownClick(Sender: TObject);
     procedure bSortByNameClick(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
   private
     ROM: array of byte;
     NoChange: boolean;
@@ -157,8 +161,8 @@ begin
   RomName := FileName;
   SetCaption;
   f := CreateFile(pchar(FileName), GENERIC_READ, FILE_SHARE_READ, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
-  n := GetLastError;
-  ShowMessage(IntToStr(n));
+  //n := GetLastError;
+  //ShowMessage(IntToStr(n));
   if f = INVALID_HANDLE_VALUE then raise Exception.Create(format('%s not found', [FileName]));
   n := GetFileSize(f, nil);
   SetLength(ROM, n);
@@ -657,6 +661,51 @@ begin
   sl.Sort;
   lbList.Items.Assign(sl);
   sl.Free;
+end;
+
+
+procedure TfmMain.Button1Click(Sender: TObject);
+  var i, m, Xs, Ys: integer;
+      t, X, Y: Byte;
+      FlipH, FlipV: boolean;
+      tmp: array[0..255] of cardinal;
+begin
+  Test.Picture.Bitmap.Width := 256;
+  Test.Picture.Bitmap.Height := 256;
+  Test.Picture.Bitmap.PixelFormat := pf8bit;
+  Test.Picture.Bitmap.Palette := hPalBMP;
+
+  Move(Spr.Pal[0], tmp[0], 256 *4);
+  tmp[0] := ColorToRGB(Color);
+  ByteSwapColors(tmp[0], 256);
+  SetDIBColorTable(Test.Canvas.Handle, 0, 256, tmp[0]);
+
+  FillChar(Test.Picture.Bitmap.ScanLine[255]^, 256*256, 0);
+
+//  m := $1926C;
+  m := $1B6E8;
+  for i := 0 to seLen.Value -1 do begin
+    t := ROM[m+1];
+    X := ROM[m+2];
+    Y := ROM[m+3];
+
+    Ys := t and $F0;
+    Xs := (t and $0F) shl 4;
+    Test.Canvas.CopyRect(Bounds(X, Y, 16, 16), bmp.Canvas, Bounds(Xs, Ys, 16, 16));
+
+    inc(m, 4);
+  end;
+
+//  Test.Canvas.Brush.Color := $0100000E;
+//  Test.Canvas.FillRect(Bounds(0, 0, Width, Height));
+  //Test.Canvas.CopyRect(Bounds(0, 0, 256, 256), bmp.Canvas, Bounds(0, 0, 256, 256));
+
+{  for i := 0 to 255 do begin
+    s := bmp.ScanLine[i];
+    d := Test.Picture.Bitmap.ScanLine[i];
+    Move(s^, Test.Picture.Bitmap.ScanLine[i]^, 256);
+  end;}
+  Test.Repaint;
 end;
 
 end.
