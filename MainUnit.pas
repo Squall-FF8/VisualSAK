@@ -665,8 +665,8 @@ end;
 
 
 procedure TfmMain.Button1Click(Sender: TObject);
-  var i, m, Xs, Ys: integer;
-      t, X, Y: Byte;
+  var i, m, Xs, Ys, H, W: integer;
+      b, t, X, Y: Byte;
       FlipH, FlipV: boolean;
       tmp: array[0..255] of cardinal;
 begin
@@ -682,16 +682,27 @@ begin
 
   FillChar(Test.Picture.Bitmap.ScanLine[255]^, 256*256, 0);
 
-//  m := $1926C;
-  m := $1B6E8;
+  m := $1926C;
+  bmp.Transparent := true;
+  bmp.TransparentColor := $01000000;
+  Test.Transparent := true;
+
+  //m := $1B6E8;
   for i := 0 to seLen.Value -1 do begin
+    b := ROM[m];
     t := ROM[m+1];
-    X := ROM[m+2];
-    Y := ROM[m+3];
+    X := ROM[m+2] + 128;
+    Y := ROM[m+3] + 128;
+
+    if b > 127 then H := -16
+               else H := 16;
+    if (b and $40) > 0 then W := -16
+                       else W := 16;
 
     Ys := t and $F0;
     Xs := (t and $0F) shl 4;
-    Test.Canvas.CopyRect(Bounds(X, Y, 16, 16), bmp.Canvas, Bounds(Xs, Ys, 16, 16));
+    Test.Canvas.CopyRect(Bounds(X, Y, W, H), bmp.Canvas, Bounds(Xs, Ys, 16, 16));
+    //StretchBlt(Test.Canvas.Handle, X, Y, W, H, bmp.canvas.Handle, Xs, Ys, 16, 16, SRCCOPY);
 
     inc(m, 4);
   end;
@@ -705,6 +716,7 @@ begin
     d := Test.Picture.Bitmap.ScanLine[i];
     Move(s^, Test.Picture.Bitmap.ScanLine[i]^, 256);
   end;}
+  Test.Transparent := false;
   Test.Repaint;
 end;
 
