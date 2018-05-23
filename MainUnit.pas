@@ -75,6 +75,10 @@ type
     Test: TImage;
     Button1: TButton;
     seLen: TSpinEdit;
+    eAddr: TEdit;
+    bPrev: TSpeedButton;
+    bNext: TSpeedButton;
+    Label6: TLabel;
     procedure bOpenROMClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure lbListClick(Sender: TObject);
@@ -102,6 +106,8 @@ type
     procedure bGraphicDownClick(Sender: TObject);
     procedure bSortByNameClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
+    procedure bPrevClick(Sender: TObject);
+    procedure bNextClick(Sender: TObject);
   private
     ROM: array of byte;
     NoChange: boolean;
@@ -115,6 +121,7 @@ type
     procedure SetCaption;
     procedure NewDraw;
     procedure ClearImage;
+    procedure DrawSprite;
   public
   end;
 
@@ -664,11 +671,11 @@ begin
 end;
 
 
+
+var Index: integer = 0;
+
 procedure TfmMain.Button1Click(Sender: TObject);
-  var i, m, Xs, Ys, H, W: integer;
-      b, t, X, Y: Byte;
-      FlipH, FlipV: boolean;
-      tmp: array[0..255] of cardinal;
+  var tmp: array[0..255] of cardinal;
 begin
   Test.Picture.Bitmap.Width := 256;
   Test.Picture.Bitmap.Height := 256;
@@ -680,13 +687,10 @@ begin
   ByteSwapColors(tmp[0], 256);
   SetDIBColorTable(Test.Canvas.Handle, 0, 256, tmp[0]);
 
-  FillChar(Test.Picture.Bitmap.ScanLine[255]^, 256*256, 0);
+{  FillChar(Test.Picture.Bitmap.ScanLine[255]^, 256*256, 0);
 
-  m := $1926C;
-  bmp.Transparent := true;
-  bmp.TransparentColor := $01000000;
-  Test.Transparent := true;
-
+  m := StrToInt(eAddr.Text);
+  //m := $1926C;
   //m := $1B6E8;
   for i := 0 to seLen.Value -1 do begin
     b := ROM[m];
@@ -694,30 +698,64 @@ begin
     X := ROM[m+2] + 128;
     Y := ROM[m+3] + 128;
 
-    if b > 127 then H := -16
-               else H := 16;
-    if (b and $40) > 0 then W := -16
-                       else W := 16;
-
     Ys := t and $F0;
     Xs := (t and $0F) shl 4;
-    Test.Canvas.CopyRect(Bounds(X, Y, W, H), bmp.Canvas, Bounds(Xs, Ys, 16, 16));
-    //StretchBlt(Test.Canvas.Handle, X, Y, W, H, bmp.canvas.Handle, Xs, Ys, 16, 16, SRCCOPY);
+
+    DrawTile16(Test.Picture.Bitmap, X, Y, bmp, Xs, Ys, b shr 6);
 
     inc(m, 4);
   end;
 
-//  Test.Canvas.Brush.Color := $0100000E;
-//  Test.Canvas.FillRect(Bounds(0, 0, Width, Height));
-  //Test.Canvas.CopyRect(Bounds(0, 0, 256, 256), bmp.Canvas, Bounds(0, 0, 256, 256));
-
-{  for i := 0 to 255 do begin
+  for i := 0 to 255 do begin
     s := bmp.ScanLine[i];
     d := Test.Picture.Bitmap.ScanLine[i];
     Move(s^, Test.Picture.Bitmap.ScanLine[i]^, 256);
-  end;}
-  Test.Transparent := false;
+  end;
+  //Test.Transparent := false;
+  Test.Repaint; }
+end;
+
+procedure TfmMain.DrawSprite;
+  var i, m, n, Xs, Ys: integer;
+      b, t, X, Y: Byte;
+begin
+  FillChar(Test.Picture.Bitmap.ScanLine[255]^, 256*256, 0);
+
+  m := $19008 + Index * 4;
+  n := pWord(@ROM[m])^;
+  m := $19008 + 4 * pWord(@ROM[m + 2])^;
+  //m := StrToInt(eAddr.Text);
+  //m := $1926C;
+  //m := $1B6E8;
+  Label6.Caption := format('%d - %x - %d:%d', [Index, m, (ROM[m] shr 2) and $03, ROM[m] and $03]);
+  for i := 0 to n-1 do begin
+    b := ROM[m];
+    t := ROM[m+1];
+    X := ROM[m+2] + 128;
+    Y := ROM[m+3] + 128;
+
+    Ys := (b and $03) shl 8 + t and $F0;
+    Xs := (t and $0F) shl 4;
+
+    DrawTile16(Test.Picture.Bitmap, X, Y, bmp, Xs, Ys, b shr 6);
+
+    inc(m, 4);
+  end;
   Test.Repaint;
+end;
+
+procedure TfmMain.bPrevClick(Sender: TObject);
+begin
+  if Index = 0 then exit;
+  dec(Index);
+  DrawSprite;
+end;
+
+procedure TfmMain.bNextClick(Sender: TObject);
+begin
+  if Index >= 153 then exit;
+  inc(Index);
+  DrawSprite;
 end;
 
 end.

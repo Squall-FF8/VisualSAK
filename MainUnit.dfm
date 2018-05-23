@@ -392,6 +392,31 @@ object fmMain: TfmMain
       ShowHint = True
       OnClick = bPalMonoClick
     end
+    object bPrev: TSpeedButton
+      Left = 80
+      Top = 376
+      Width = 23
+      Height = 22
+      Caption = '<'
+      Layout = blGlyphBottom
+      OnClick = bPrevClick
+    end
+    object bNext: TSpeedButton
+      Left = 112
+      Top = 376
+      Width = 23
+      Height = 22
+      Caption = '>'
+      Layout = blGlyphBottom
+      OnClick = bNextClick
+    end
+    object Label6: TLabel
+      Left = 112
+      Top = 400
+      Width = 32
+      Height = 13
+      Caption = 'Label6'
+    end
     object gPal: TDrawGrid
       Left = 8
       Top = 4
@@ -443,23 +468,31 @@ object fmMain: TfmMain
       OnKeyPress = eAddressKeyPress
     end
     object Button1: TButton
-      Left = 32
+      Left = 8
       Top = 376
-      Width = 75
+      Width = 65
       Height = 25
       Caption = 'Button1'
       TabOrder = 4
       OnClick = Button1Click
     end
     object seLen: TSpinEdit
-      Left = 128
+      Left = 224
       Top = 376
       Width = 41
       Height = 22
       MaxValue = 2000
       MinValue = 1
       TabOrder = 5
-      Value = 10
+      Value = 18
+    end
+    object eAddr: TEdit
+      Left = 168
+      Top = 376
+      Width = 57
+      Height = 21
+      TabOrder = 6
+      Text = '$1926C'
     end
   end
   object Panel2: TPanel

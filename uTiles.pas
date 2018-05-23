@@ -63,6 +63,8 @@ procedure Convert_2BppNES(bmp: tBitmap; Src: pByteArray; W,H: integer);
 procedure Convert_2BppNGP(bmp: tBitmap; Src: pByteArray; W,H: integer);
 procedure Convert_4BppPC(var bmp: tBitmap; Src: pByte; W,H: integer);
 
+procedure DrawTile16(DstBmp: tBitmap; Xd, Yd: integer; SrcBmp: tBitmap; Xs, Ys: integer; Flip: byte);
+
 
 implementation
 
@@ -843,6 +845,25 @@ begin
     end;
   end;
 end;
+
+
+procedure DrawTile16(DstBmp: tBitmap; Xd, Yd: integer; SrcBmp: tBitmap; Xs, Ys: integer; Flip: byte);
+  var i, j: integer;
+      s, d: pByteArray;
+      c: byte;
+begin
+  for i := 0 to 15 do begin
+    s := SrcBmp.ScanLine[Ys + i];
+    d := DstBmp.ScanLine[Yd + i];
+    for j := 0 to 15 do begin
+      c := s[Xs+j];
+      if c = 0 then continue;
+      if (Flip and $01) > 0 then d[Xd + 16-j] := c
+                            else d[Xd + j] := c;
+    end;
+  end;
+end;
+
 
 
 initialization
