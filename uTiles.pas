@@ -854,7 +854,8 @@ procedure DrawTile16(DstBmp: tBitmap; Xd, Yd: integer; SrcBmp: tBitmap; Xs, Ys: 
 begin
   for i := 0 to 15 do begin
     s := SrcBmp.ScanLine[Ys + i];
-    d := DstBmp.ScanLine[Yd + i];
+    if (Flip and $02) > 0 then d := DstBmp.ScanLine[Yd + 16-i]
+                          else d := DstBmp.ScanLine[Yd + i];
     for j := 0 to 15 do begin
       c := s[Xs+j];
       if c = 0 then continue;

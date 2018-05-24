@@ -672,7 +672,7 @@ end;
 
 
 
-var Index: integer = 0;
+var Index: integer = 106;
 
 procedure TfmMain.Button1Click(Sender: TObject);
   var tmp: array[0..255] of cardinal;
@@ -753,7 +753,7 @@ end;
 
 procedure TfmMain.bNextClick(Sender: TObject);
 begin
-  if Index >= 153 then exit;
+  if Index >= 152 then exit;
   inc(Index);
   DrawSprite;
 end;
