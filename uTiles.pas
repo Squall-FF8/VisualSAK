@@ -62,6 +62,13 @@ procedure Convert_4BppFX(var bmp: tBitmap; Src: pByte; W,H: integer);
 procedure Convert_2BppNES(bmp: tBitmap; Src: pByteArray; W,H: integer);
 procedure Convert_2BppNGP(bmp: tBitmap; Src: pByteArray; W,H: integer);
 procedure Convert_4BppPC(var bmp: tBitmap; Src: pByte; W,H: integer);
+procedure Convert_15BppBGR(var bmp: tBitmap; Src: pWord; W,H: integer);
+
+procedure Transform_4BppSNES(bmp: tBitmap; Src: pByteArray; W,H: integer);
+procedure Transform_3BppSNES(bmp: tBitmap; Src: pByteArray; W,H: integer);
+procedure Transform_2BppSNES(bmp: tBitmap; Src: pByteArray; W,H: integer);
+procedure Transform_4BppGBA(bmp: tBitmap; Src: pByte; W,H: integer);
+//procedure Transform_Pal(Address: pWord; Pal: pPalette; Num: cardinal = 16);
 
 procedure DrawTile16(DstBmp: tBitmap; Xd, Yd: integer; SrcBmp: tBitmap; Xs, Ys: integer; Flip: byte);
 
@@ -846,6 +853,21 @@ begin
   end;
 end;
 
+procedure Convert_15BppBGR(var bmp: tBitmap; Src: pWord; W,H: integer);
+  var i, j: integer;
+      p: pByteArray;
+begin
+  for i := 0 to H -1 do begin
+    p := bmp.ScanLine[i];
+    for j := 0 to W -1 do begin
+      p[3*j +2]    := ((Src^ and $1F) * 255) div 31;
+      p[3*j +1] := (((Src^ shr 5) and $1F) * 255) div 31;
+      p[3*j +0] := (((Src^ shr 10) and $1F) * 255) div 31;
+      inc(Src);
+    end;
+  end;
+end;
+
 
 procedure DrawTile16(DstBmp: tBitmap; Xd, Yd: integer; SrcBmp: tBitmap; Xs, Ys: integer; Flip: byte);
   var i, j: integer;
@@ -866,6 +888,114 @@ begin
 end;
 
 
+procedure Transform_4BppSNES(bmp: tBitmap; Src: pByteArray; W,H: integer);
+  var i, j, tx, ty, m: integer;
+      b0, b1, b2, b3: byte;
+      p: pByte;
+begin
+  m := 0;
+  for i := 0 to H-1 do
+    for j := 0 to W - 1 do begin
+      for ty := 0 to 7 do begin
+        p := bmp.ScanLine[ty + 8*i];
+        inc(p, j*8);
+        b0 := 0;
+        b1 := 0;
+        b2 := 0;
+        b3 := 0;
+        for tx := 7 downto 0 do begin
+          b0 := b0 +  (p^ and $01) shl tx;
+          b1 := b1 + ((p^ and $02) shr 1) shl tx;
+          b2 := b2 + ((p^ and $04) shr 2) shl tx;
+          b3 := b3 + ((p^ and $08) shr 3) shl tx;
+          inc(p);
+        end;
+        Src[m]    := b0;
+        Src[m+1]  := b1;
+        Src[m+16] := b2;
+        Src[m+17] := b3;
+        inc(m, 2);
+      end;
+      inc(m, 16)
+    end;
+end;
+
+procedure Transform_3BppSNES(bmp: tBitmap; Src: pByteArray; W,H: integer);
+  var i, j, tx, ty, m: integer;
+      b0, b1, b2: byte;
+      p: pByte;
+begin
+  m := 0;
+  for i := 0 to H-1 do
+    for j := 0 to W - 1 do begin
+      for ty := 0 to 7 do begin
+        p := bmp.ScanLine[ty + 8*i];
+        inc(p, j*8);
+        b0 := 0;
+        b1 := 0;
+        b2 := 0;
+        for tx := 7 downto 0 do begin
+          b0 := b0 +  (p^ and $01) shl tx;
+          b1 := b1 + ((p^ and $02) shr 1) shl tx;
+          b2 := b2 + ((p^ and $04) shr 2) shl tx;
+          inc(p);
+        end;
+        Src[m]    := b0;
+        Src[m+1]  := b1;
+        Src[m + 16 - ty] := b2;
+        inc(m, 2);
+      end;
+      inc(m, 8)
+    end;
+end;
+
+procedure Transform_2BppSNES(bmp: tBitmap; Src: pByteArray; W,H: integer);
+  var i, j, tx, ty, m: integer;
+      b0, b1: byte;
+      p: pByte;
+begin
+  m := 0;
+  for i := 0 to H-1 do
+    for j := 0 to W - 1 do begin
+      for ty := 0 to 7 do begin
+        p := bmp.ScanLine[ty + 8*i];
+        inc(p, j*8);
+        b0 := 0;
+        b1 := 0;
+        for tx := 7 downto 0 do begin
+          b0 := b0 +  (p^ and $01) shl tx;
+          b1 := b1 + ((p^ and $02) shr 1) shl tx;
+          inc(p);
+        end;
+        Src[m]    := b0;
+        Src[m+1]  := b1;
+        inc(m, 2);
+      end;
+      //inc(m, 16)
+    end;
+end;
+
+
+procedure Transform_4BppGBA(bmp: tBitmap; Src: pByte; W,H: integer);
+  var i, j, ty, tx: integer;
+      p: PByteArray;
+begin
+  for i := 0 to H -1 do
+    for j := 0 to W -1 do
+      for ty := 0 to 7 do begin
+        p := bmp.ScanLine[i*8 + ty];
+        for tx := 0 to 3 do begin
+          Src^ := p[j*8 + 2*tx] + p[j*8 + 2*tx +1] shl 4;
+          inc(Src);
+        end;
+      end;
+end;
+
+
+
+//procedure Transform_Pal(Address: pWord; Pal: pPalette; Num: cardinal = 16);
+//begin
+//end;
 
 initialization
   TransColor := GetSysColor(COLOR_BTNFACE);

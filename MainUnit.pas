@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, Buttons, StdCtrls, Spin, Grids, pngextra, pngimage, ComCtrls,
-  ExtCtrls, Menus, ImgList;
+  ExtCtrls, Menus, ImgList, ExtDlgs;
 
 
 type
@@ -25,15 +25,11 @@ type
     bAddAddress: TPNGButton;
     bDelAddress: TPNGButton;
     Panel2: TPanel;
-    bOpenROM: TSpeedButton;
     Label1: TLabel;
     Label2: TLabel;
     Label3: TLabel;
     Label5: TLabel;
     Label8: TLabel;
-    bNew: TPNGButton;
-    bLoad: TPNGButton;
-    bSave: TPNGButton;
     Label12: TLabel;
     seWidth: TSpinEdit;
     seHeight: TSpinEdit;
@@ -47,12 +43,9 @@ type
     Label4: TLabel;
     cbCompression: TComboBox;
     Image: TImage;
-    bExport: TPNGButton;
-    bOpenPal: TPNGButton;
     dOpenPal: TOpenDialog;
     popList: TPopupMenu;
     miNewAddressfromtheEnd: TMenuItem;
-    bSavePal: TPNGButton;
     dSavePal: TSaveDialog;
     Panel3: TPanel;
     lbList: TListBox;
@@ -79,6 +72,20 @@ type
     bPrev: TSpeedButton;
     bNext: TSpeedButton;
     Label6: TLabel;
+    dOpenImage: TOpenPictureDialog;
+    Image1: TImage;
+    bOpenPal: TPNGButton;
+    bSavePal: TPNGButton;
+    Image2: TImage;
+    bOpenROM: TPNGButton;
+    bSaveROM: TPNGButton;
+    bLoad: TPNGButton;
+    Image3: TImage;
+    bSave: TPNGButton;
+    Image4: TImage;
+    bImport: TPNGButton;
+    bExport: TPNGButton;
+    bNew: TPNGButton;
     procedure bOpenROMClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure lbListClick(Sender: TObject);
@@ -108,6 +115,8 @@ type
     procedure Button1Click(Sender: TObject);
     procedure bPrevClick(Sender: TObject);
     procedure bNextClick(Sender: TObject);
+    procedure bImportClick(Sender: TObject);
+    procedure bSaveROMClick(Sender: TObject);
   private
     ROM: array of byte;
     NoChange: boolean;
@@ -177,12 +186,16 @@ begin
   CloseHandle(f);
 
   // Enable controls
-  bNew.Enabled := true;
-  bLoad.Enabled := true;
-  bSave.Enabled := true;
+  bSaveROM.Visible := true;
+
+  bNew.Visible  := true;
+  bLoad.Visible := true;
+  bSave.Visible := true;
 
   ePalAddress.Enabled := true;
   bLoadPalROM.Enabled := true;
+  bOpenPal.Visible := true;
+  bSavePal.Visible := true;
 
   eAddress.Enabled    := true;
   bAddAddress.Enabled := true;
@@ -192,7 +205,7 @@ end;
 
 procedure TfmMain.bOpenROMClick(Sender: TObject);
 begin
-  OpenDialog.Filter := 'SNES/GBA ROM|*.smc; *.sfc; *.gba|SNES ROM|*.smc; *.sfc|GBA ROM|*.gba|ALL|*.*';
+  OpenDialog.Filter := cRomExt;
   if OpenDialog.Execute then
     LoadROM(OpenDialog.FileName);
 end;
@@ -220,6 +233,7 @@ begin
   bmp.Palette := hPalBMP;
 
   SetLength(Buf, 1024*1024);
+  SetLength(Pal, 256);
   //LoadROM('S:\Test\FFV\work\2564 - Final Fantasy V Advance (U)(Independent).gba');
   //LoadROM('D:\Emulators\GBA\ROM\2564 - Final Fantasy V Advance (U)(Independent).gba');
 end;
@@ -232,6 +246,7 @@ begin
   bmp.Free;
 
   SetLength(Buf, 0);
+  SetLength(Pal, 0);
 end;
 
 
@@ -322,9 +337,14 @@ begin
     Spr.BPP  := cTemplate[Spr.Tmpl].BPP;
     Spr.tW   := cTemplate[Spr.Tmpl].tW;
     Spr.tH   := cTemplate[Spr.Tmpl].tH;
-    Spr.PalNum := 1 shl Spr.BPP;
-    sePalNum.Value := Spr.PalNum;
-    MakeMonoPal(Spr.Pal, Spr.PalNum);
+    if Spr.Bpp < 9 then begin
+      Spr.PalNum := 1 shl Spr.BPP;
+      sePalNum.Value := Spr.PalNum;
+      MakeMonoPal(Spr.Pal, Spr.PalNum);
+    end else begin
+      Spr.PalNum := 0;
+      FillChar(Spr.Pal, 256*4, 0);
+    end;
   end else begin
     Spr.W    := seWidth.Value;
     Spr.H    := seHeight.Value;
@@ -343,8 +363,9 @@ procedure TfmMain.bAddAddressClick(Sender: TObject);
   var v: pVisual;
       n: integer;
 begin
-  New(v);
-  FillChar(v^, Sizeof(v^), 0);
+  //New(v);
+  //FillChar(v^, Sizeof(v^), 0);
+  v := NewVisual;
   v.Address := StrToInt(eAddress.Text);
   v.Name := eAddress.Text;
   v.H    := seHeight.Value;
@@ -372,31 +393,35 @@ end;
 
 
 procedure TfmMain.bSaveClick(Sender: TObject);
-  var i: integer;
-      f: file of tVisual;
+  //var i: integer;
+      //f: file of tVisual;
 begin
   SaveDialog.Filter := 'Visual SAK (*.vsk)|*.vsk|ALL (*.*)|*.*';
   if not SaveDialog.Execute then exit;
+  SaveVisuals(SaveDialog.FileName, lbList.Items);
 
-  AssignFile(f, SaveDialog.FileName);
+  {AssignFile(f, SaveDialog.FileName);
   Rewrite(f);
   for i := 0 to lbList.Count -1 do
     Write(f, pVisual(lbList.Items.Objects[i])^);
-  CloseFile(f);
+  CloseFile(f); }
 end;
 
 
 procedure TfmMain.bLoadClick(Sender: TObject);
-  var i, n: integer;
-      f: file of tVisual;
-      v: pVisual;
+  //var i, n: integer;
+      //f: file of tVisual;
+  //    v: pVisual;
 begin
   OpenDialog.Filter := 'Visual SAK (*.vsk)|*.vsk|ALL (*.*)|*.*';
   if not OpenDialog.Execute then exit;
   DocName := OpenDialog.FileName;
   SetCaption;
+  EmptyList;
+  LoadVisuals(OpenDialog.FileName, lbList.Items);
 
-  AssignFile(f, OpenDialog.FileName);
+
+  {AssignFile(f, OpenDialog.FileName);
   Reset(f);
   n := FileSize(f);  // return number of records, no size in bytes
   EmptyList;
@@ -405,7 +430,7 @@ begin
     Read(f, v^);
     lbList.AddItem(v.Name, tObject(v));
   end;
-  CloseFile(f);
+  CloseFile(f); }
 end;
 
 
@@ -478,7 +503,7 @@ begin
   end;
   gPal.Repaint;
 
-  Move(Pal, Spr.Pal, Spr.PalNum * 4);
+  Move(Pal[0], Spr.Pal[0], Spr.PalNum * 4);
   UpdatePreview;
 end;
 
@@ -506,7 +531,7 @@ procedure TfmMain.EmptyList;
   var i: integer;
 begin
   for i := 0 to lbList.Count - 1 do
-    Dispose(pointer(lbList.Items.Objects[i]));
+    DelVisual(pointer(lbList.Items.Objects[i]));
   lbList.Clear;
 end;
 
@@ -526,6 +551,8 @@ begin
   cbTemplate.Enabled := State;
   cbTemplate.ItemIndex := Index;
   cbCompression.Enabled := State;
+  bImport.Visible := State;
+  bExport.Visible := State;
 
   seZoom.Enabled    := Index >= 0;
   seWidth.Enabled   := Index >= 0;
@@ -540,13 +567,18 @@ procedure  TfmMain.NewDraw;
       Src: pByte;
       tmp: array[0..255] of cardinal;
 begin
+
   bmp.Width  := Spr.W * Spr.tW;
   bmp.Height := Spr.H * Spr.tH;
 
-  Move(Spr.Pal[0], tmp[0], 256 *4);
-  tmp[0] := ColorToRGB(Color);
-  ByteSwapColors(tmp[0], 256);
-  SetDIBColorTable(bmp.Canvas.Handle, 0, 256, tmp[0]);
+  if Spr.BPP < 9 then begin
+    bmp.PixelFormat := pf8bit;
+    Move(Spr.Pal[0], tmp[0], 256 *4);
+    tmp[0] := ColorToRGB(Color);
+    ByteSwapColors(tmp[0], 256);
+    SetDIBColorTable(bmp.Canvas.Handle, 0, 256, tmp[0]);
+  end else
+    bmp.PixelFormat := pf24bit;
 
   if Spr.Cmp > 0 then Src := @buf[Spr.Off]
                  else Src := @ROM[Spr.Address+Spr.Off];
@@ -563,6 +595,7 @@ begin
     11: Convert_2BppNES   (bmp, pByteArray(Src), Spr.W, Spr.H);
     12: Convert_2BppNGP   (bmp, pByteArray(Src), Spr.W, Spr.H);
     13: Convert_4BppPC    (bmp, Src, Spr.W, Spr.H);
+    14: Convert_15BppBGR  (bmp, pWord(Src), Spr.W, Spr.H);
   end;
 
   w := bmp.Width * seZoom.Value;
@@ -584,21 +617,27 @@ end;
 
 procedure TfmMain.bExportClick(Sender: TObject);
   var png: tPngObject;
+      ext: string;
 begin
-  SaveDialog.Filter := 'PNG Image (*.png)|*.png|ALL (*.*)|*.*';
+  SaveDialog.Filter := 'PNG Image (*.png)|*.png|BMP Image (*.bmp)|*.bmp|ALL (*.*)|*.*';
   if not SaveDialog.Execute then exit;
+  ext := LowerCase(ExtractFileExt(SaveDialog.FileName));
 
-  //bmp.TransparentColor := $1000000;
-  //bmp.TransparentMode := tmFixed;
-  bmp.Transparent := true;
-  png := TPNGObject.Create;
-  png.Assign(bmp);
-  png.CompressionLevel := 9;
-  //png.TransparentColor := $1000000;
-  //png.Transparent := true;
-  png.SaveToFile(SaveDialog.FileName);
-  png.Free;
-  bmp.Transparent := false;
+  if ext = '.bmp' then
+    bmp.SaveToFile(SaveDialog.FileName)
+  else if ext = '.png' then begin
+    //bmp.TransparentColor := $1000000;
+    //bmp.TransparentMode := tmFixed;
+    bmp.Transparent := true;
+    png := TPNGObject.Create;
+    png.Assign(bmp);
+    png.CompressionLevel := 9;
+    //png.TransparentColor := $1000000;
+    //png.Transparent := true;
+    png.SaveToFile(SaveDialog.FileName);
+    png.Free;
+    bmp.Transparent := false;
+  end;
 end;
 
 
@@ -608,9 +647,9 @@ begin
   if not dOpenPal.Execute then exit;
 
   e := UpperCase(ExtractFileExt(dOpenPal.FileName));
-  if      e = '.ACO' then LoadPalAco(dOpenPal.FileName, @Pal)
-  else if e = '.ACT' then LoadPalAct(dOpenPal.FileName, @Pal)
-  else if (e[2] = 'Z') and (e[3] = 'S') then LoadPalZst(dOpenPal.FileName, @Pal)
+  if      e = '.ACO' then LoadPalAco(dOpenPal.FileName, Pal)
+  else if e = '.ACT' then LoadPalAct(dOpenPal.FileName, Pal)
+  else if (e[2] = 'Z') and (e[3] = 'S') then LoadPalZst(dOpenPal.FileName, Pal)
   else exit;
 
   gPal.Repaint;
@@ -668,6 +707,8 @@ begin
   sl.Sort;
   lbList.Items.Assign(sl);
   sl.Free;
+  if Spr <> nil then
+    lbList.ItemIndex := lbList.Items.IndexOfObject(tObject(Spr));
 end;
 
 
@@ -756,6 +797,86 @@ begin
   if Index >= 152 then exit;
   inc(Index);
   DrawSprite;
+end;
+
+
+
+procedure TfmMain.bImportClick(Sender: TObject);
+  var ext: string;
+      png: TPNGObject;
+      _bmp: tBitmap;
+      tmp: array[0..255] of cardinal;
+      i: integer;
+      p: pWord;
+      R, G, B: byte;
+begin
+  if Spr.Cmp <> 0 then exit;
+  if not dOpenImage.Execute then exit;
+  ext := LowerCase(ExtractFileExt(dOpenImage.FileName));
+
+  _bmp := tBitmap.Create;
+  if ext = '.png' then begin
+    png := TPNGObject.Create;
+    png.LoadFromFile(dOpenImage.FileName);
+    _bmp.Assign(png);
+    png.Free;
+  end else if ext = '.bmp' then
+    _bmp.LoadFromFile(dOpenImage.FileName)
+  else begin
+    _bmp.Free;
+    exit;
+  end;
+
+  // Typecast Integer to remove warnings of compiler
+  if (_bmp.Width <> Integer(Spr.W * Spr.tW)) or (_bmp.Height <> Integer(Spr.H * Spr.tH)) or (_bmp.PixelFormat <> pf8bit) then
+    ShowMessage('Not cottect size or BPP!')
+  else begin
+    case Spr.Tmpl of
+      1: Transform_4BppGBA( _bmp, @ROM[Spr.Address+Spr.Off], Spr.W, Spr.H);
+      2: Transform_4BppSNES(_bmp, @ROM[Spr.Address+Spr.Off], Spr.W, Spr.H);
+      3: Transform_3BppSNES(_bmp, @ROM[Spr.Address+Spr.Off], Spr.W, Spr.H);
+      4: Transform_2BppSNES(_bmp, @ROM[Spr.Address+Spr.Off], Spr.W, Spr.H);
+    end;
+    Test.Picture.Bitmap.Assign(_bmp);
+  end;
+
+  // update Palette in Sprites
+  GetDIBColorTable(_bmp.Canvas.Handle, 0, 256, tmp[0]);
+  //GetPaletteEntries(_bmp.Palette, 0, 256, tmp[0]);
+  //tmp[0] := ColorToRGB(Color);
+  ByteSwapColors(tmp[0], 256);
+  Move(tmp[0], Spr.Pal[0], 256 *4);
+
+  //update Palette in ROM
+  if Spr.PalAdr <> 0 then begin
+    p := @ROM[Spr.PalAdr];
+    for i := 0 to Spr.PalNum -1 do begin
+      R := (Spr.Pal[i] and $0000FF) shr 3;
+      G := (Spr.Pal[i] and $00FF00) shr 11;
+      B := (Spr.Pal[i] and $FF0000) shr 19;
+      p^ := R + G shl 5 + B shl 10;
+      inc(p);
+    end;
+  end;
+
+  _bmp.Free;
+end;
+
+
+procedure TfmMain.bSaveROMClick(Sender: TObject);
+  var f, n: cardinal;
+begin
+  SaveDialog.Filter := cRomExt;
+  SaveDialog.FileName := RomName;
+  if not SaveDialog.Execute then exit;
+
+  RomName := SaveDialog.FileName;
+  SetCaption;
+
+  f := CreateFile(pchar(RomName), GENERIC_WRITE, 0, nil, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+  if f = INVALID_HANDLE_VALUE then raise Exception.Create(format('%s not found', [RomName]));
+  WriteFile(f, ROM[0], Length(ROM), n, nil);
+  CloseHandle(f);
 end;
 
 end.

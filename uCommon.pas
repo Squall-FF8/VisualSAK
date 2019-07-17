@@ -1,14 +1,27 @@
 unit uCommon;
 
 interface
-uses Windows, Graphics;
+uses Windows, Graphics, Classes;
 
 
 const
   cFmt = '%3d ($%.2x)';
 
+  cRomExt =
+    'All Consoles|*.smc; *.sfc; *.gba; *.nes; *.ngp|'+
+    'Super Nintendo (SNES)|*.smc; *.sfc|'+
+    'Gameboy Advance (GBA)|*.gba|'+
+    'Nintendo (NES)|*.nes|'+
+    'Neo-Geo Portable ROM|*.ngp|'+
+    'ALL|*.*';
 
 type
+  tVSKHeader = packed record
+    ID: array[1..4] of char;
+    Revision: byte;
+    Count: cardinal;
+  end;
+
   tTemplate = record
     Name: string[20];
     BPP,
@@ -19,22 +32,23 @@ type
 
 const
   // Tile Format constants
-  cTmplNum = 13;
+  cTmplNum = 14;
   cTemplate: array[0 .. cTmplNum] of tTemplate = (
-    (Name: '';               BPP: 1; tW:1; tH:1),
-    (Name: '4bpp (GBA)';     BPP: 4; tW:8; tH:8),
-    (Name: '4bpp (SNES)';    BPP: 4; tW:8; tH:8),
-    (Name: '3bpp (SNES)';    BPP: 3; tW:8; tH:8),
-    (Name: '2bpp (SNES)';    BPP: 2; tW:8; tH:8),
-    (Name: '1bpp';           BPP: 1; tW:8; tH:8),
-    (Name: '8bpp (Mode7-1)'; BPP: 8; tW:8; tH:8),
-    (Name: '8bpp (Mode7-2)'; BPP: 8; tW:8; tH:8),
-    (Name: '8bpp (Mode3)';   BPP: 8; tW:8; tH:8),
-    (Name: '8bpp (PC)';      BPP: 8; tW:1; tH:1),
-    (Name: '4bpp (SNES-FX)'; BPP: 4; tW:1; tH:1),
-    (Name: '2bpp (NES)';     BPP: 2; tW:8; tH:8),
-    (Name: '2bpp (NGP)';     BPP: 2; tW:8; tH:8),
-    (Name: '4bpp (PC    )';  BPP: 4; tW:1; tH:1)
+    (Name: '';                BPP: 1;  tW:1; tH:1),
+    (Name: '4bpp (GBA)';      BPP: 4;  tW:8; tH:8),
+    (Name: '4bpp (SNES)';     BPP: 4;  tW:8; tH:8),
+    (Name: '3bpp (SNES)';     BPP: 3;  tW:8; tH:8),
+    (Name: '2bpp (SNES)';     BPP: 2;  tW:8; tH:8),
+    (Name: '1bpp';            BPP: 1;  tW:8; tH:8),
+    (Name: '8bpp (Mode7-1)';  BPP: 8;  tW:8; tH:8),
+    (Name: '8bpp (Mode7-2)';  BPP: 8;  tW:8; tH:8),
+    (Name: '8bpp (Mode3)';    BPP: 8;  tW:8; tH:8),
+    (Name: '8bpp (PC)';       BPP: 8;  tW:1; tH:1),
+    (Name: '4bpp (SNES-FX)';  BPP: 4;  tW:1; tH:1),
+    (Name: '2bpp (NES)';      BPP: 2;  tW:8; tH:8),
+    (Name: '2bpp (NGP)';      BPP: 2;  tW:8; tH:8),
+    (Name: '4bpp (PC    )';   BPP: 4;  tW:1; tH:1),
+    (Name: '15bpp (BGR 555)'; BPP: 15; tW:1; tH:1)
   );
 
 
@@ -64,7 +78,7 @@ const
 
 type
   tPalEntry = cardinal;
-  tPalette = array[0..255] of tPalEntry;
+  tPalette = array of tPalEntry;
   pPalette = ^tPalette;
 
   tVisual = record
@@ -82,6 +96,7 @@ type
     Pal:     tPalette;
     PalAdr:  cardinal;
     PalNum:  cardinal;
+    Reserved: array[1..20] of byte;  //for future extentions
   end;
   pVisual = ^tVisual;
 
@@ -93,16 +108,23 @@ var
 
   Buf: array of byte;
 
+  vHeader: tVSKHeader = (ID: 'VSAK'; Revision: 4);
+
 
 procedure ByteSwapColors(var Colors; Count: Integer);
 
-procedure LoadPalAco(const FileName: string; Pal: pPalette);
-procedure LoadPalAct(const FileName: string; Pal: pPalette);
-procedure LoadPalZst(const FileName: string; Pal: pPalette);
+procedure LoadPalAco(const FileName: string; var Pal: tPalette);
+procedure LoadPalAct(const FileName: string; var Pal: tPalette);
+procedure LoadPalZst(const FileName: string; var Pal: tPalette);
 
-procedure SavePalAct(const FileName: string; Pal: pPalette);
-procedure SavePalAco(const FileName: string; Pal: pPalette);
-procedure SavePalZst(const FileName: string; Pal: pPalette);
+procedure SavePalAct(const FileName: string; const Pal: tPalette);
+procedure SavePalAco(const FileName: string; const Pal: tPalette);
+procedure SavePalZst(const FileName: string; const Pal: tPalette);
+
+function NewVisual: pVisual;
+procedure DelVisual(v: pVisual);
+procedure SaveVisuals(const DocName: string; Items: tStrings);
+procedure LoadVisuals(const DocName: string; Items: tStrings);
 
 
 implementation
@@ -148,7 +170,7 @@ end;
 
 
 
-procedure LoadPalAco(const FileName: string; Pal: pPalette);
+procedure LoadPalAco(const FileName: string; var Pal: tPalette);
   var i: integer;
       v, m, c: word;
       tmp: array of byte;
@@ -169,7 +191,7 @@ begin
     raise Exception.Create('Wrong data/extention');
   if m > 256 then m := 256;
 
-  FillChar(Pal^, 256*4, 0);
+  FillChar(Pal, 256*4, 0);
   p := 4;
   if v = 1 then begin
     for i := 0 to m-1 do begin
@@ -186,7 +208,7 @@ begin
 end;
 
 
-procedure LoadPalACT(const FileName: string; Pal: pPalette);
+procedure LoadPalACT(const FileName: string; var Pal: tPalette);
   var i: integer;
       tmp: array[0..771] of byte;
       f, n: cardinal;
@@ -204,7 +226,7 @@ begin
 end;
 
 
-procedure LoadPalZst(const FileName: string; Pal: pPalette);
+procedure LoadPalZst(const FileName: string; var Pal: tPalette);
   var i: integer;
       tmp: array[0..255] of Word;
       p: pWord;
@@ -229,7 +251,7 @@ end;
 
 
 
-procedure SavePalAct(const FileName: string; Pal: pPalette);
+procedure SavePalAct(const FileName: string; const Pal: tPalette);
   var i: integer;
       tmp: array[0..771] of byte;
       f, n: cardinal;
@@ -246,7 +268,7 @@ begin
 end;
 
 
-procedure SavePalAco(const FileName: string; Pal: pPalette);
+procedure SavePalAco(const FileName: string; const Pal: tPalette);
   const cAco256 = 256*10 + 4;
   var i: integer;
       tmp: array[0 .. cAco256-1] of byte;
@@ -268,7 +290,7 @@ begin
 end;
 
 
-procedure SavePalZst(const FileName: string; Pal: pPalette);
+procedure SavePalZst(const FileName: string; const Pal: tPalette);
   var i: integer;
       tmp: array[0..255] of Word;
       f, n: cardinal;
@@ -285,5 +307,69 @@ begin
   CloseHandle(f);
 end;
 
+
+{
+  Visual Manipulations
+}
+function NewVisual: pVisual;
+begin
+  New(Result);
+  FillChar(Result^, Sizeof(Result^), 0);
+  SetLength(Result.Pal, 256);
+end;
+
+
+procedure DelVisual(v: pVisual);
+begin
+  SetLength(v.Pal, 0);
+  Dispose(v);
+end;
+
+
+procedure SaveVisuals(const DocName: string; Items: tStrings);
+  var i: integer;
+      f, n: cardinal;
+begin
+  vHeader.Count := Items.Count;
+
+  f := CreateFile(pchar(DocName), GENERIC_WRITE, 0, nil, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+  if f = INVALID_HANDLE_VALUE then raise Exception.Create(format('%s not found', [DocName]));
+  WriteFile(f, vHeader, SizeOf(vHeader), n, nil);
+
+  for i := 0 to Items.Count -1 do
+    WriteFile(f, pVisual(Items.Objects[i])^, SizeOf(tVisual), n, nil);
+
+  for i := 0 to Items.Count -1 do
+    WriteFile(f, pVisual(Items.Objects[i])^.Pal[0], 4 * pVisual(Items.Objects[i])^.PalNum, n, nil);
+
+  CloseHandle(f);
+end;
+
+
+procedure LoadVisuals(const DocName: string; Items: tStrings);
+  var i: integer;
+      f, n: cardinal;
+      Header: tVSKHeader;
+      v: pVisual;
+begin
+  f := CreateFile(pchar(DocName), GENERIC_READ, FILE_SHARE_READ, nil, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+  if f = INVALID_HANDLE_VALUE then raise Exception.Create(format('%s not found', [DocName]));
+  ReadFile(f, Header, SizeOf(Header), n, nil);
+
+  for i := 1 to Header.Count do begin
+    New(v);
+    ReadFile(f, v^, SizeOf(v^), n, nil);
+    v.Pal := nil;
+    Items.AddObject(v.Name, tObject(v));
+  end;
+
+  for i := 0 to Header.Count -1 do begin
+    v := pVisual(Items.Objects[i]);
+    SetLength(v.Pal, 256);
+    ReadFile(f, v.Pal[0], 4 * v.PalNum, n, nil);
+  end;
+
+  CloseHandle(f);
+end;
 
 end.
