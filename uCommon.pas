@@ -13,6 +13,7 @@ const
     'Gameboy Advance (GBA)|*.gba|'+
     'Nintendo (NES)|*.nes|'+
     'Neo-Geo Portable ROM|*.ngp|'+
+    'ZSNES savestate|*.zs?|'+
     'ALL|*.*';
 
 type
@@ -359,7 +360,9 @@ begin
   for i := 1 to Header.Count do begin
     New(v);
     ReadFile(f, v^, SizeOf(v^), n, nil);
-    v.Pal := nil;
+    pInteger(@v.Pal)^ := 0;
+    //v^.Pal := nil;
+    //SetLength(v.Pal, 0);
     Items.AddObject(v.Name, tObject(v));
   end;
 

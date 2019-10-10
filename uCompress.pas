@@ -238,7 +238,7 @@ begin
     ShowMessage('Not valid LZ10 stream');
 
   raw_len := pInteger(@Src[0])^ shr 8;
-  SetLength(Dst, raw_len);
+  //SetLength(Dst, raw_len);
 
   raw := 0;
 
