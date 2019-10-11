@@ -52,6 +52,12 @@ const
     (Name: '15bpp (BGR 555)'; BPP: 15; tW:1; tH:1)
   );
 
+  cFmtTileNum = 1;
+  cFmtTile: array[0 .. cFmtTileNum] of string =  (
+    '',
+    '4bpp tiles(GBA)'
+  );
+
 
 type
   tCompression = record

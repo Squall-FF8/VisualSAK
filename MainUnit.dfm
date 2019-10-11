@@ -1689,7 +1689,6 @@ object fmMain: TfmMain
       Width = 32
       Height = 25
       Hint = 'Export an Image'
-      Visible = False
       ButtonLayout = pbsImageAbove
       ImageNormal.Data = {
         89504E470D0A1A0A0000000D494844520000001E000000180806000000ED694D
@@ -2531,5 +2530,9 @@ object fmMain: TfmMain
   object dOpenImage: TOpenPictureDialog
     Left = 24
     Top = 169
+  end
+  object XPManifest1: TXPManifest
+    Left = 120
+    Top = 81
   end
 end

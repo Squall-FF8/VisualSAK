@@ -5,7 +5,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, Buttons, StdCtrls, Spin, Grids, pngextra, pngimage, ComCtrls,
-  ExtCtrls, Menus, ImgList, ExtDlgs;
+  ExtCtrls, Menus, ImgList, ExtDlgs, XPMan;
 
 
 type
@@ -86,6 +86,7 @@ type
     bImport: TPNGButton;
     bExport: TPNGButton;
     bNew: TPNGButton;
+    XPManifest1: TXPManifest;
     procedure bOpenROMClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure lbListClick(Sender: TObject);
@@ -140,7 +141,7 @@ var
 implementation
 {$R *.dfm}
 
-uses uCommon, uCompress, uTiles;
+uses uCommon, uCompress, uTiles, uExport;
 
 
 var
@@ -234,6 +235,7 @@ begin
 
   SetLength(Buf, 1024*1024);
   SetLength(Pal, 256);
+
   //LoadROM('S:\Test\FFV\work\2564 - Final Fantasy V Advance (U)(Independent).gba');
   //LoadROM('D:\Emulators\GBA\ROM\2564 - Final Fantasy V Advance (U)(Independent).gba');
 end;
@@ -619,6 +621,9 @@ procedure TfmMain.bExportClick(Sender: TObject);
   var png: tPngObject;
       ext: string;
 begin
+  if fmExport.ShowModal <> mrOK then exit;
+
+
   SaveDialog.Filter := 'PNG Image (*.png)|*.png|BMP Image (*.bmp)|*.bmp|ALL (*.*)|*.*';
   if not SaveDialog.Execute then exit;
   ext := LowerCase(ExtractFileExt(SaveDialog.FileName));
