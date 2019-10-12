@@ -100,6 +100,12 @@ procedure TfmExport.FormCreate(Sender: TObject);
 begin
   for i := 0 to cFmtTileNum do
     cbTileFormat.Items.Add(cFmtTile[i]);
+  cbTileFormat.ItemIndex := 1;
+
+  for i := 0 to cFmtPalNum do
+    cbPalFormat.Items.Add(cFmtPal[i]);
+  cbPalFormat.ItemIndex := 1;
 end;
+
 
 end.

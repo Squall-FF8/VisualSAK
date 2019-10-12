@@ -55,9 +55,14 @@ const
   cFmtTileNum = 1;
   cFmtTile: array[0 .. cFmtTileNum] of string =  (
     '',
-    '4bpp tiles(GBA)'
-  );
+    '4bpp tiles (GBA)' );
 
+  cFmtPalNum = 3;
+  cFmtPal: array[0 .. cFmtPalNum] of string =  (
+    '',
+    'RGB: 888 (24bit)',
+    'RGB: 555 (15bit)',
+    'RGB: 444 (12bit)' );
 
 type
   tCompression = record
