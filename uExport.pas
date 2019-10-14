@@ -34,10 +34,11 @@ type
     procedure bTileFileClick(Sender: TObject);
     procedure bPalFileClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
+    procedure bOKClick(Sender: TObject);
   private
     { Private declarations }
   public
-    { Public declarations }
+    Act: integer;
   end;
 
 var
@@ -105,7 +106,28 @@ begin
   for i := 0 to cFmtPalNum do
     cbPalFormat.Items.Add(cFmtPal[i]);
   cbPalFormat.ItemIndex := 1;
+
+  cExpImage.Checked := false;
+  cExpPal.Checked := false;
 end;
 
+
+procedure TfmExport.bOKClick(Sender: TObject);
+begin
+  Act := 0;
+  if cExpTiles.Checked then
+    if (cbTileFormat.ItemIndex < 1) or (eExpTileFile.Text = '') then exit
+    else Act := 1;
+
+  if cExpPal.Checked then
+    if (cbPalFormat.ItemIndex < 1) or (eExpPalFile.Text = '') then exit
+    else Act := Act or 2;
+
+  if cExpImage.Checked then
+    if eExpImgFile.Text = '' then exit
+    else Act := Act or 4;
+
+  ModalResult := mrOk;
+end;
 
 end.

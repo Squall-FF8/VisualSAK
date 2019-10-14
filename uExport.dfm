@@ -58,7 +58,6 @@ object fmExport: TfmExport
     Alignment = taRightJustify
     AutoSize = False
     Caption = 'Palette format:'
-    Enabled = False
   end
   object cExpImage: TCheckBox
     Left = 32
@@ -120,6 +119,8 @@ object fmExport: TfmExport
     Width = 129
     Height = 17
     Caption = 'Export a Palette:'
+    Checked = True
+    State = cbChecked
     TabOrder = 6
     OnClick = cExpPalClick
   end
@@ -128,7 +129,6 @@ object fmExport: TfmExport
     Top = 248
     Width = 441
     Height = 21
-    Enabled = False
     TabOrder = 7
   end
   object bPalFile: TButton
@@ -137,7 +137,6 @@ object fmExport: TfmExport
     Width = 25
     Height = 21
     Caption = '...'
-    Enabled = False
     TabOrder = 8
     OnClick = bPalFileClick
   end
@@ -148,8 +147,8 @@ object fmExport: TfmExport
     Height = 25
     Anchors = [akLeft, akBottom]
     Caption = 'OK'
-    ModalResult = 1
     TabOrder = 9
+    OnClick = bOKClick
   end
   object bCancel: TButton
     Left = 280
@@ -176,7 +175,6 @@ object fmExport: TfmExport
     Width = 145
     Height = 21
     Style = csDropDownList
-    Enabled = False
     ItemHeight = 13
     TabOrder = 12
   end

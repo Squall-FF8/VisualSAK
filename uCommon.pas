@@ -118,7 +118,7 @@ var
   PalBMP: pLogPalette;
   hPalBMP: hPalette;
 
-  Buf: array of byte;
+  Buf, TmpFile: array of byte;
 
   vHeader: tVSKHeader = (ID: 'VSAK'; Revision: 4);
 

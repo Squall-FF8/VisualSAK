@@ -234,6 +234,7 @@ begin
   bmp.Palette := hPalBMP;
 
   SetLength(Buf, 1024*1024);
+  SetLength(TmpFile, 1024*1024);
   SetLength(Pal, 256);
 
   //LoadROM('S:\Test\FFV\work\2564 - Final Fantasy V Advance (U)(Independent).gba');
@@ -248,6 +249,7 @@ begin
   bmp.Free;
 
   SetLength(Buf, 0);
+  SetLength(TmpFile, 0);
   SetLength(Pal, 0);
 end;
 
@@ -620,8 +622,18 @@ end;
 procedure TfmMain.bExportClick(Sender: TObject);
   var png: tPngObject;
       ext: string;
+      f, n, w, h: cardinal;
 begin
   if fmExport.ShowModal <> mrOK then exit;
+  w := Spr.W * Spr.tW;
+  h := Spr.H * Spr.tH;
+  if (fmExport.Act and 1) > 0 then begin
+    Transform_4BppGBA(bmp, @TmpFile[0], Spr.W, Spr.H);
+    f := CreateFile(pchar(fmExport.eExpTileFile.Text), GENERIC_WRITE, 0, nil, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+    if f = INVALID_HANDLE_VALUE then RaiseLastOSError;
+    WriteFile(f, TmpFile[0], w*h, n, nil);
+    CloseHandle(f);
+  end;
 
 
   SaveDialog.Filter := 'PNG Image (*.png)|*.png|BMP Image (*.bmp)|*.bmp|ALL (*.*)|*.*';
