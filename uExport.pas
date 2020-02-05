@@ -107,7 +107,8 @@ begin
     cbPalFormat.Items.Add(cFmtPal[i]);
   cbPalFormat.ItemIndex := 1;
 
-  cExpImage.Checked := false;
+  //cExpImage.Checked := false;
+  //cExpTiles.Checked := false;
   cExpPal.Checked := false;
 end;
 

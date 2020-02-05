@@ -599,7 +599,8 @@ begin
     11: Convert_2BppNES   (bmp, pByteArray(Src), Spr.W, Spr.H);
     12: Convert_2BppNGP   (bmp, pByteArray(Src), Spr.W, Spr.H);
     13: Convert_4BppPC    (bmp, Src, Spr.W, Spr.H);
-    14: Convert_15BppBGR  (bmp, pWord(Src), Spr.W, Spr.H);
+    14: Convert_4BppPCRev (bmp, Src, Spr.W, Spr.H);
+    15: Convert_15BppBGR  (bmp, pWord(Src), Spr.W, Spr.H);
   end;
 
   w := bmp.Width * seZoom.Value;
@@ -627,6 +628,7 @@ begin
   if fmExport.ShowModal <> mrOK then exit;
   w := Spr.W * Spr.tW;
   h := Spr.H * Spr.tH;
+
   if (fmExport.Act and 1) > 0 then begin
     Transform_4BppGBA(bmp, @TmpFile[0], Spr.W, Spr.H);
     f := CreateFile(pchar(fmExport.eExpTileFile.Text), GENERIC_WRITE, 0, nil, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
@@ -635,25 +637,31 @@ begin
     CloseHandle(f);
   end;
 
+  if (fmExport.Act and 2) > 0 then begin
+    Transform_4BppGBA(bmp, @TmpFile[0], Spr.W, Spr.H);
+    f := CreateFile(pchar(fmExport.eExpTileFile.Text), GENERIC_WRITE, 0, nil, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+    if f = INVALID_HANDLE_VALUE then RaiseLastOSError;
+    WriteFile(f, TmpFile[0], w*h, n, nil);
+    CloseHandle(f);
+  end;
 
-  SaveDialog.Filter := 'PNG Image (*.png)|*.png|BMP Image (*.bmp)|*.bmp|ALL (*.*)|*.*';
-  if not SaveDialog.Execute then exit;
-  ext := LowerCase(ExtractFileExt(SaveDialog.FileName));
-
-  if ext = '.bmp' then
-    bmp.SaveToFile(SaveDialog.FileName)
-  else if ext = '.png' then begin
-    //bmp.TransparentColor := $1000000;
-    //bmp.TransparentMode := tmFixed;
-    bmp.Transparent := true;
-    png := TPNGObject.Create;
-    png.Assign(bmp);
-    png.CompressionLevel := 9;
-    //png.TransparentColor := $1000000;
-    //png.Transparent := true;
-    png.SaveToFile(SaveDialog.FileName);
-    png.Free;
-    bmp.Transparent := false;
+  if (fmExport.Act and 4) > 0 then begin
+    ext := LowerCase(ExtractFileExt(fmExport.eExpImgFile.Text));
+    if ext = '.bmp' then
+      bmp.SaveToFile(fmExport.eExpImgFile.Text)
+    else if ext = '.png' then begin
+      //bmp.TransparentColor := $1000000;
+      //bmp.TransparentMode := tmFixed;
+      bmp.Transparent := true;
+      png := TPNGObject.Create;
+      png.Assign(bmp);
+      png.CompressionLevel := 9;
+      //png.TransparentColor := $1000000;
+      //png.Transparent := true;
+      png.SaveToFile(fmExport.eExpImgFile.Text);
+      png.Free;
+      bmp.Transparent := false;
+    end;
   end;
 end;
 
